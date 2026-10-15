@@ -2,6 +2,10 @@ package com.plantapp
 
 import android.content.ActivityNotFoundException
 import android.os.Bundle
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -78,7 +82,7 @@ fun PlantScreen(model: PlantViewModel) {
             Box {
                 TextButton(onClick = { menuOpen = true }) { Text(stringResource(R.string.menu)) }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    listOf(Page.HOME to R.string.home, Page.SETTINGS to R.string.settings, Page.HISTORY to R.string.history).forEach { (target, label) ->
+                    listOf(Page.HOME to R.string.home, Page.HISTORY to R.string.history, Page.SETTINGS to R.string.settings).forEach { (target, label) ->
                         DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = { pageName = target.name; menuOpen = false })
                     }
                 }
@@ -89,10 +93,13 @@ fun PlantScreen(model: PlantViewModel) {
                 Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineLarge)
                 Text(stringResource(R.string.connect), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.key_info))
-                OutlinedTextField(value = model.apiKey, onValueChange = { model.apiKey = it }, label = { Text(stringResource(R.string.api_key)) }, singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth(), enabled = !model.busy)
+                OutlinedTextField(value = model.apiKey, onValueChange = model::updateApiKey, label = { Text(stringResource(R.string.api_key)) }, singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth(), enabled = !model.busy && !model.keyBusy)
                 TextButton(onClick = { openLink("https://my.plantnet.org/") }) { Text(stringResource(R.string.get_key)) }
-                OutlinedButton(onClick = { model.apiKey = "" }, enabled = model.apiKey.isNotEmpty() && !model.busy) { Text(stringResource(R.string.forget_key)) }
+                Button(onClick = model::saveApiKey, enabled = model.apiKey.isNotBlank() && !model.busy && !model.keyBusy) { Text(stringResource(R.string.save_key)) }
+                OutlinedButton(onClick = model::forgetApiKey, enabled = (model.apiKey.isNotEmpty() || model.hasStoredApiKey) && !model.busy && !model.keyBusy) { Text(stringResource(R.string.forget_key)) }
+                if (model.keyBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
+                model.keyStatus?.let { Text(it) }
             }
             Page.HISTORY -> HistoryScreen(model, openLink, Modifier.weight(1f))
             Page.HOME -> Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -108,7 +115,7 @@ fun PlantScreen(model: PlantViewModel) {
                     catch (_: ActivityNotFoundException) { pendingPath = null; file.delete(); model.reportCameraError() }
                 }) { Text(stringResource(if (model.photo == null) R.string.take_photo else R.string.retake_photo)) }
                 Text(stringResource(R.string.upload_notice), style = MaterialTheme.typography.bodySmall)
-                Button(onClick = { if (model.apiKey.isBlank()) keyRequired = true else model.identify() }, enabled = model.photo != null && !model.busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.identify)) }
+                Button(onClick = { if (model.apiKey.isBlank()) keyRequired = true else model.identify() }, enabled = model.photo != null && !model.busy && !model.keyBusy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.identify)) }
                 if (model.busy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(stringResource(R.string.working)) }
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 model.historySaveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -170,7 +177,10 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
                     Text(entry.results.first().match.commonName, style = MaterialTheme.typography.titleLarge)
                     Text(entry.results.first().match.scientificName, fontStyle = FontStyle.Italic)
                     TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) R.string.hide_details else R.string.show_details)) }
-                    if (expanded) entry.results.forEachIndexed { index, result -> ResultCard(result, index, openLink) }
+                    if (expanded) {
+                        HistoryPhoto(model.historyPhoto(entry))
+                        entry.results.forEachIndexed { index, result -> ResultCard(result, index, openLink) }
+                    }
                 }
             }
         }
@@ -187,3 +197,24 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
 private fun IdentificationNotice() { Text(stringResource(R.string.identification_notice), style = MaterialTheme.typography.bodySmall) }
 @Composable
 private fun Attribution() { Text(stringResource(R.string.attribution), style = MaterialTheme.typography.bodySmall) }
+
+@Composable
+private fun HistoryPhoto(file: File?) {
+    var loaded by remember(file?.path) { mutableStateOf(false) }
+    val bitmap by produceState<Bitmap?>(null, file?.path) {
+        value = withContext(Dispatchers.IO) {
+            if (file == null) null else runCatching {
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(file.path, bounds)
+                var sample = 1
+                while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 1000) sample *= 2
+                BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
+            }.getOrNull()
+        }
+        loaded = true
+    }
+    bitmap?.let {
+        Image(it.asImageBitmap(), contentDescription = stringResource(R.string.history_photo),
+            modifier = Modifier.fillMaxWidth().height(240.dp), contentScale = ContentScale.Fit)
+    } ?: Text(stringResource(if (file == null || loaded) R.string.no_history_photo else R.string.loading_history_photo), style = MaterialTheme.typography.bodySmall)
+}

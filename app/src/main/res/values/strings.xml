@@ -9,7 +9,7 @@
     <string name="headline">Ismerd meg a körülötted élő növényeket!</string>
     <string name="intro">Fotózz le egy levelet vagy virágot, és tudd meg, milyen növényt találtál.</string>
     <string name="connect">Pl@ntNet-kapcsolat</string>
-    <string name="key_info">Add meg a saját API-kulcsodat. A kulcs csak az alkalmazás memóriájában marad, és kizárólag a Pl@ntNet kapja meg. Az alkalmazás újraindítása után ismét meg kell adnod.</string>
+    <string name="key_info">Add meg a saját API-kulcsodat, majd koppints a Mentés gombra. A kulcsot titkosítva, ezen a készüléken tároljuk, és újraindítás után automatikusan betöltjük. Csak a Pl@ntNet szolgáltatáshoz küldjük el.</string>
     <string name="api_key">Pl@ntNet API-kulcs</string>
     <string name="get_key">Ingyenes API-kulcs igénylése</string>
     <string name="forget_key">API-kulcs elfelejtése</string>
@@ -29,12 +29,12 @@
     <string name="wikipedia_language">A Wikipédia leírása és hivatkozása angol nyelvű lehet.</string>
     <string name="identification_notice">A felismerés javaslat, nem biztos azonosítás. Ne ez alapján döntsd el, hogy egy növény ehető vagy gyógyászati célra használható-e.</string>
     <string name="attribution">Növényfelismerés: Pl@ntNet · Leírások: Wikipédia (CC BY-SA).</string>
-    <string name="history_info">Az utolsó 100 sikeres felismerést ezen a készüléken tároljuk, a legújabbal kezdve. A képeket és az API-kulcsot nem mentjük az előzményekbe.</string>
+    <string name="history_info">Az utolsó 100 sikeres felismerést ezen a készüléken tároljuk, a legújabbal kezdve. A felismerésekhez tartozó fotókat is megőrizzük. Az API-kulcs nem kerül az előzményekbe.</string>
     <string name="history_empty">Még nincsenek felismerési előzmények. Fotózz le és ismertess fel egy növényt!</string>
     <string name="history_loading">Előzmények betöltése…</string>
     <string name="clear_history">Összes előzmény törlése</string>
     <string name="confirm_clear_title">Törlöd az előzményeket?</string>
-    <string name="confirm_clear_message">Az ezen a készüléken tárolt összes felismerés véglegesen törlődik.</string>
+    <string name="confirm_clear_message">Az ezen a készüléken tárolt összes felismerés és a hozzájuk tartozó fotók véglegesen törlődnek.</string>
     <string name="delete">Törlés</string>
     <string name="cancel">Mégse</string>
     <string name="show_details">Részletek megjelenítése</string>
@@ -52,4 +52,12 @@
     <string name="link_error">A hivatkozást nem sikerült megnyitni. Ellenőrizd, hogy van-e telepített böngésző.</string>
     <string name="close">Bezárás</string>
     <string name="key_required_title">API-kulcs szükséges</string>
+    <string name="save_key">Mentés</string>
+    <string name="key_saved">Az API-kulcsot titkosítva mentettük.</string>
+    <string name="key_forgotten">Az API-kulcsot töröltük a készülékről.</string>
+    <string name="key_load_error">A mentett API-kulcsot nem sikerült betölteni. Add meg és mentsd újra, vagy válaszd az elfelejtését.</string>
+    <string name="key_save_error">Az API-kulcs mentése vagy törlése nem sikerült. Próbáld újra.</string>
+    <string name="history_photo">A korábban felismert növény képe</string>
+    <string name="no_history_photo">Ehhez az előzményhez nem érhető el mentett fotó.</string>
+    <string name="loading_history_photo">A mentett kép betöltése…</string>
 </resources>

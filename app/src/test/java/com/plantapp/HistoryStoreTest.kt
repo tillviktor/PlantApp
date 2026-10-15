@@ -74,4 +74,40 @@ class HistoryStoreTest {
         assertThrows(Exception::class.java) { HistoryStore(missingDirectory).add(entry("invalid", 2)) }
         assertEquals(listOf(original), store.load())
     }
+    @Test fun photoPersistsAfterCacheRemovalAndIsDeletedWithHistory() {
+        val file = file(); val store = HistoryStore(file)
+        val camera = File(folder.root, "cache.jpg").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val saved = store.add(entry("with-photo", 1), camera).first()
+        camera.delete()
+        val restored = HistoryStore(file)
+        assertEquals(saved, restored.load().first())
+        assertArrayEquals(byteArrayOf(1, 2, 3), restored.photoFile(saved)!!.readBytes())
+        restored.add(saved.copy(results = listOf(saved.results.first().copy(summary = "updated"))))
+        assertTrue(restored.photoFile(saved)!!.exists())
+        restored.clear()
+        assertNull(restored.photoFile(saved))
+    }
+    @Test fun oldHistoryWithoutPhotosStillLoadsAndNewPhotosArePrunedAtLimit() {
+        val file = file(); val store = HistoryStore(file)
+        store.add(entry("old", 1)); assertNull(HistoryStore(file).load().first().photoName)
+        val camera = File(folder.root, "cache.jpg").apply { writeText("test-image") }
+        val first = store.add(entry("photo", 2), camera).first()
+        val firstFile = store.photoFile(first)!!
+        (3..103).forEach { store.add(entry("$it", it.toLong()), camera) }
+        assertFalse(firstFile.exists())
+        assertEquals(100, File(file.parentFile, "history-photos").listFiles()!!.size)
+    }
+    @Test fun failedPhotoCopyLeavesExistingHistoryAndPhotoIntact() {
+        val file = file(); val store = HistoryStore(file)
+        val camera = File(folder.root, "cache.jpg").apply { writeText("photo") }
+        val old = store.add(entry("old", 1), camera).first()
+        assertThrows(Exception::class.java) { store.add(entry("new", 2), File(folder.root, "missing.jpg")) }
+        assertEquals(listOf(old), store.load()); assertNotNull(store.photoFile(old))
+    }
+    @Test fun photoPathsCannotEscapePrivateDirectory() {
+        val store = HistoryStore(file())
+        assertThrows(IllegalArgumentException::class.java) { store.add(entry("bad", 1).copy(photoName = "../secret.jpg")) }
+        assertNull(store.photoFile(entry("bad", 1).copy(photoName = "../secret.jpg")))
+    }
+
 }

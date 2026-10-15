@@ -3,10 +3,7 @@ package com.plantapp
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.UUID
 
 data class PlantResult(val match: PlantMatch, val summary: String?)
@@ -14,10 +11,13 @@ data class HistoryEntry(
     val id: String = UUID.randomUUID().toString(),
     val recognizedAtMillis: Long = System.currentTimeMillis(),
     val results: List<PlantResult>,
+    val photoName: String? = null,
 )
 
-/** Private, bounded history. Contains neither API credentials nor photographs. */
+/** Private, bounded history with optional photos. Never contains API credentials. */
 class HistoryStore(private val file: File) {
+    private val photos = File(file.parentFile, "history-photos")
+    private fun validPhotoName(name: String) = name.matches(Regex("[a-f0-9-]{36}\\.jpg"))
     companion object { const val MAX_ENTRIES = 100 }
 
     @Synchronized fun load(): List<HistoryEntry> {
@@ -38,15 +38,20 @@ class HistoryStore(private val file: File) {
                     PlantResult(PlantMatch(scientificName, result.getString("commonName"),
                         result.getString("family"), score),
                         if (result.isNull("summary")) null else result.getString("summary"))
-                }).also { require(it.id.isNotBlank() && it.recognizedAtMillis > 0) }
+                }, if (entry.isNull("photoName")) null else entry.getString("photoName").also { require(validPhotoName(it)) })
+                .also { require(it.id.isNotBlank() && it.recognizedAtMillis > 0) }
         }.sortedByDescending { it.recognizedAtMillis }.take(MAX_ENTRIES)
     }
 
-    @Synchronized fun add(entry: HistoryEntry): List<HistoryEntry> {
+    @Synchronized fun add(entry: HistoryEntry, sourcePhoto: File? = null): List<HistoryEntry> {
         require(entry.id.isNotBlank() && entry.recognizedAtMillis > 0 && entry.results.size in 1..3)
         require(entry.results.all { it.match.scientificName.isNotBlank() && it.match.confidence.isFinite() && it.match.confidence in 0.0..1.0 })
         // Loading first preserves damaged/unknown history instead of silently overwriting it.
-        val entries = (load().filterNot { it.id == entry.id } + entry)
+        val oldEntries = load()
+        val photoName = if (sourcePhoto == null) entry.photoName else UUID.randomUUID().toString() + ".jpg"
+        require(photoName == null || validPhotoName(photoName))
+        val savedEntry = entry.copy(photoName = photoName)
+        val entries = (oldEntries.filterNot { it.id == entry.id } + savedEntry)
             .sortedByDescending { it.recognizedAtMillis }.take(MAX_ENTRIES)
         val array = JSONArray()
         entries.forEach { item ->
@@ -56,23 +61,31 @@ class HistoryStore(private val file: File) {
                     .put("commonName", result.match.commonName).put("family", result.match.family)
                     .put("confidence", result.match.confidence).put("summary", result.summary ?: JSONObject.NULL))
             }
-            array.put(JSONObject().put("id", item.id).put("recognizedAtMillis", item.recognizedAtMillis).put("results", results))
+            val json = JSONObject().put("id", item.id).put("recognizedAtMillis", item.recognizedAtMillis).put("results", results)
+            item.photoName?.let { json.put("photoName", it) }
+            array.put(json)
         }
-        val directory = requireNotNull(file.parentFile)
-        check(directory.isDirectory || directory.mkdirs())
-        val temporary = File.createTempFile("history-", ".tmp", directory)
+        val targetPhoto = if (sourcePhoto != null) File(photos, requireNotNull(photoName)) else null
         try {
-            FileOutputStream(temporary).use { out ->
-                out.write(JSONObject().put("version", 1).put("entries", array).toString().toByteArray(Charsets.UTF_8))
-                out.fd.sync()
+            if (targetPhoto != null) {
+                require(sourcePhoto!!.isFile && sourcePhoto.length() > 0)
+                writePrivateFile(targetPhoto, sourcePhoto.readBytes())
             }
-            try { Files.move(temporary.toPath(), file.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING) }
-            catch (_: AtomicMoveNotSupportedException) { Files.move(temporary.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING) }
-        } finally { temporary.delete() }
+            writePrivateFile(file, JSONObject().put("version", 1).put("entries", array).toString().toByteArray(Charsets.UTF_8))
+        } catch (failure: Exception) {
+            targetPhoto?.delete()
+            throw failure
+        }
+        val retained = entries.mapNotNull { it.photoName }.toSet()
+        photos.listFiles()?.filter { it.isFile && validPhotoName(it.name) && it.name !in retained }?.forEach { it.delete() }
         return entries
     }
 
+    fun photoFile(entry: HistoryEntry): File? = entry.photoName?.takeIf(::validPhotoName)?.let { File(photos, it) }?.takeIf { it.isFile }
+
     @Synchronized fun clear(): List<HistoryEntry> {
+        // Delete photos first so a failed cleanup can be retried from the history screen.
+        photos.listFiles()?.filter { it.isFile }?.forEach { Files.deleteIfExists(it.toPath()) }
         Files.deleteIfExists(file.toPath())
         return emptyList()
     }

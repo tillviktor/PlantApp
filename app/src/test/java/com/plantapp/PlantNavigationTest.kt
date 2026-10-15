@@ -25,10 +25,11 @@ class PlantNavigationTest {
     private val historyFixture = object : ExternalResource() {
         override fun before() {
             historyFile.delete()
+            File(historyFile.parentFile, "api-key.enc").delete()
             HistoryStore(historyFile).add(HistoryEntry("test-entry", 1700000000000,
                 listOf(PlantResult(PlantMatch("Bellis perennis", "Százszorszép", "Asteraceae", 0.95), "Mentett növényleírás"))))
         }
-        override fun after() { historyFile.delete() }
+        override fun after() { HistoryStore(historyFile).clear(); File(historyFile.parentFile, "api-key.enc").delete() }
     }
     @get:Rule val rules: TestRule = RuleChain.outerRule(historyFixture).around(compose)
 
@@ -51,7 +52,31 @@ class PlantNavigationTest {
         compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
         openMenu("Beállítások")
         compose.onNodeWithText("API-kulcs elfelejtése").performScrollTo().assertIsEnabled().performClick()
-        compose.onNodeWithText("API-kulcs elfelejtése").assertIsNotEnabled()
+        compose.waitUntil(10000) { compose.onAllNodes(hasText("API-kulcs elfelejtése") and isNotEnabled()).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    @Test fun menuListsHistoryBeforeSettings() {
+        compose.onNodeWithText("Menü").performClick()
+        val history = compose.onNode(hasText("Előzmények") and hasAnyAncestor(isPopup())).fetchSemanticsNode()
+        val settings = compose.onNode(hasText("Beállítások") and hasAnyAncestor(isPopup())).fetchSemanticsNode()
+        org.junit.Assert.assertTrue(history.boundsInRoot.top < settings.boundsInRoot.top)
+    }
+
+    @Test fun storedPhotoAppearsInHistoryDetails() {
+        val image = File(compose.activity.cacheDir, "history-fixture.jpg")
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        image.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+        bitmap.recycle()
+        val store = HistoryStore(historyFile)
+        store.add(store.load().first(), image)
+        image.delete()
+        compose.activityRule.scenario.onActivity { ViewModelProvider(it)[PlantViewModel::class.java].reloadHistory() }
+        openMenu("Előzmények")
+        compose.waitUntil(10000) { compose.onAllNodesWithText("Összes előzmény törlése").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasScrollToIndexAction()).performScrollToKey("test-entry")
+        compose.onNodeWithText("Részletek megjelenítése").performScrollTo().performClick()
+        compose.waitUntil(10000) { compose.onAllNodesWithContentDescription("A korábban felismert növény képe").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("A korábban felismert növény képe").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun preparedPhotoEnablesRecognitionAndMissingKeyIsExplainedOnTap() {

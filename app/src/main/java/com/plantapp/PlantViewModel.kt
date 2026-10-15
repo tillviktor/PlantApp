@@ -18,7 +18,10 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class PlantViewModel(application: Application) : AndroidViewModel(application) {
+class PlantViewModel @JvmOverloads constructor(
+    application: Application,
+    private val keyStore: ApiKeyStore = ApiKeyStore(File(application.filesDir, "api-key.enc"), AndroidApiKey::get),
+) : AndroidViewModel(application) {
     private val store = HistoryStore(File(application.filesDir, "recognition-history.json"))
     private val historyMutex = Mutex()
     var history by mutableStateOf<List<HistoryEntry>>(emptyList()); private set
@@ -27,7 +30,6 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     var historySaveError by mutableStateOf<String?>(null); private set
     private fun text(id: Int) = getApplication<Application>().getString(id)
 
-    init { reloadHistory() }
 
     fun reloadHistory() { viewModelScope.launch { changeHistory { store.load() } } }
     fun clearHistory() { viewModelScope.launch { changeHistory { store.clear() } } }
@@ -45,7 +47,42 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         } finally { historyBusy = false }
     }
 
-    var apiKey by mutableStateOf("")
+    var apiKey by mutableStateOf(""); private set
+    var keyBusy by mutableStateOf(true); private set
+    var hasStoredApiKey by mutableStateOf(false); private set
+    var keyStatus by mutableStateOf<String?>(null); private set
+
+    init {
+        reloadHistory()
+        viewModelScope.launch {
+            try {
+                apiKey = withContext(Dispatchers.IO) { keyStore.load() }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                keyStatus = text(R.string.key_load_error)
+            } finally { hasStoredApiKey = keyStore.exists(); keyBusy = false }
+        }
+    }
+    fun updateApiKey(value: String) { apiKey = value; keyStatus = null }
+    fun saveApiKey() = changeApiKey(false)
+    fun forgetApiKey() = changeApiKey(true)
+    private fun changeApiKey(forget: Boolean) {
+        if (keyBusy) return
+        val value = apiKey.trim()
+        viewModelScope.launch {
+            keyBusy = true
+            try {
+                withContext(Dispatchers.IO) { if (forget) keyStore.clear() else keyStore.save(value) }
+                apiKey = if (forget) "" else value
+                hasStoredApiKey = keyStore.exists()
+                keyStatus = text(if (forget) R.string.key_forgotten else R.string.key_saved)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                keyStatus = text(R.string.key_save_error)
+            } finally { keyBusy = false }
+        }
+    }
+    fun historyPhoto(entry: HistoryEntry): File? = store.photoFile(entry)
     var photo by mutableStateOf<File?>(null); private set
     var preview by mutableStateOf<Bitmap?>(null); private set
     var busy by mutableStateOf(false); private set
@@ -95,14 +132,16 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 if (matches.isEmpty()) { error = text(R.string.no_match); return@launch }
                 val recognizedAt = System.currentTimeMillis()
                 results = matches.map { PlantResult(it, null) }
-                val entry = HistoryEntry(recognizedAtMillis = recognizedAt, results = results)
-                if (!changeHistory { store.add(entry) }) historySaveError = text(R.string.history_save_error)
+                var entry = HistoryEntry(recognizedAtMillis = recognizedAt, results = results)
+                val saved = changeHistory { store.add(entry, image) }
+                if (saved) entry = history.first { it.id == entry.id }
+                else historySaveError = text(R.string.history_save_error)
                 val summary = withContext(Dispatchers.IO) {
                     try { PlantApi.summary(matches.first().scientificName) }
                     catch (e: Exception) { if (e is CancellationException) throw e; null }
                 }
                 results = results.mapIndexed { index, result -> if (index == 0) result.copy(summary = summary) else result }
-                if (summary != null && !changeHistory { store.add(entry.copy(results = results)) }) historySaveError = text(R.string.history_save_error)
+                if (summary != null && !changeHistory { store.add(entry.copy(results = results), if (saved) null else image) }) historySaveError = text(R.string.history_save_error)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 error = text(when ((e as? IdentificationException)?.reason) {

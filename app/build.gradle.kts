@@ -2,7 +2,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id(
 android {
     namespace = "com.plantapp"
     compileSdk = 35
-    defaultConfig { applicationId = "com.plantapp"; minSdk = 26; targetSdk = 35; versionCode = 3; versionName = "0.2.1" }
+    defaultConfig { applicationId = "com.plantapp"; minSdk = 26; targetSdk = 35; versionCode = 4; versionName = "0.3.0" }
     buildFeatures { compose = true }
     testOptions { unitTests.isIncludeAndroidResources = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
@@ -20,6 +20,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.compose.ui:ui-test-junit4")
     testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("org.json:json:20250107")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

@@ -2,11 +2,24 @@
 
 An Android app built with Kotlin and Jetpack Compose. Take a plant photo, see up to three Pl@ntNet matches with common/scientific names, family and match score, and read a Wikipedia description or open its reference page.
 
+## 0.3.0 – Fotós előzmények és megjegyzett API-kulcs
+
+**Legújabb telepítő:** [`downloads/PlantApp-0.3.0-debug.apk`](downloads/PlantApp-0.3.0-debug.apk).
+
+- A menü sorrendje: **Felismerés → Előzmények → Beállítások**.
+- Az új, sikeres felismeréseknél a helyadatoktól megtisztított, legfeljebb 1600 pixeles fotót is az alkalmazás belső tárhelyére másoljuk. Az Előzmények → Részletek nézetben a kép is megjelenik. A gyorsítótár ürítése nem törli ezeket a fotókat.
+- A korábbi, kép nélkül tárolt előzmények megmaradnak, de az elveszett régi fotókat nem lehet visszaállítani; ezeknél külön üzenet látható.
+- Az előzmények törlése a mentett fotókat is törli. A 100 bejegyzéses korlátból kieső fotókat az alkalmazás eltávolítja.
+- **Menü → Beállítások → Mentés:** az API-kulcs titkosítva megmarad bezárás és újraindítás után. A titkosítás AES-GCM, a titkosító kulcsot az Android Keystore kezeli. Az API-kulcs nem kerül az előzményekbe, felhőmentésbe vagy a forráskódba.
+- **API-kulcs elfelejtése:** a tárolt API-kulcs törlése. Ha módosítod a kulcsot, a tartós megőrzéshez ismét nyomd meg a Mentés gombot.
+
+Az alkalmazás eltávolítása vagy adatainak törlése a fotókat, az előzményeket és a mentett API-kulcsot is eltávolítja. A 0.2.x verziók alábbi leírásai az akkori működést mutatják.
+
 ## 0.2.1 – Felismerés gomb javítása
 
 A fénykép előkészítése után a felismerés gombja API-kulcs nélkül is aktív. Hiányzó kulcs esetén megnyomáskor egy bezárható magyar üzenet jelzi, hogy a Menü → Beállítások oldalon kell megadni a kulcsot; az alkalmazás nem küld hitelesítés nélküli kérést. A főoldalon nincs külön Beállítások-hivatkozás vagy kulcsmegadást kérő szöveg. A tényleges felismerés továbbra is érvényes Pl@ntNet-kulcsot igényel.
 
-**Legújabb telepítő:** [`downloads/PlantApp-0.2.1-debug.apk`](downloads/PlantApp-0.2.1-debug.apk).
+**0.2.1 telepítő:** [`downloads/PlantApp-0.2.1-debug.apk`](downloads/PlantApp-0.2.1-debug.apk).
 
 ## 0.2.0 – Magyar felület és előzmények
 
@@ -24,12 +37,12 @@ Telepítés: a [`downloads/PlantApp-0.2.0-debug.apk`](downloads/PlantApp-0.2.0-d
 
 1. Open this project in Android Studio, using JDK 21 and Android SDK 35. Allow Gradle sync to complete.
 2. Run the `app` configuration on an Android 8.0+ device with a camera app and internet access.
-3. Create a personal API key at https://my.plantnet.org/ and paste it into **Menü → Beállítások**. Do not commit keys.
+3. Create a personal API key at https://my.plantnet.org/ and paste it into **Menü → Beállítások**, then tap **Mentés** to remember it. Do not commit keys.
 4. Take a close, well-lit photo of a leaf or flower, then tap **Növény felismerése**. The app explicitly uploads the photo only when you tap Identify.
 
-The key remains in memory for the current app process (including screen rotation); it is not saved to disk. You must enter it again after the process exits. Identification requires a valid key and available quota. This personal-key prototype does not ship a shared service key. A public release should use a backend to manage credentials, quotas and abuse protection.
+The API key is encrypted with AES-GCM in private internal storage when you tap **Mentés**. Its encryption key is generated and held by Android Keystore. It is loaded automatically by a new application process. **API-kulcs elfelejtése** deletes the persisted API credential; unsaved edits remain only in memory. Identification requires a valid personal key and available quota. This prototype does not ship a shared service key. A public release should use a backend to manage service credentials, quotas and abuse protection.
 
-The system camera saves to private app cache. Images are resized to at most 1600 pixels on the longest side, rotated according to EXIF, and re-encoded to remove location metadata before upload. Replaced photos are deleted; abandoned camera files are cleaned after a day when taking another photo. Android may clear cached photos at any time. No gallery or camera permission is requested: capture is delegated to the installed camera app through a temporary FileProvider grant.
+The system camera saves to private app cache. Images are resized to at most 1600 pixels on the longest side, rotated according to EXIF, and re-encoded to remove location metadata before upload. Replaced working photos are deleted; abandoned camera files are cleaned after a day when taking another photo. Successful identifications copy the sanitized image to private internal history storage. Cached working files can be removed independently; history photos persist until their record is pruned or the history is cleared. Android may clear cached photos at any time. No gallery or camera permission is requested: capture is delegated to the installed camera app through a temporary FileProvider grant.
 
 Descriptions are fetched from English Wikipedia when available; identification still works if the summary is unavailable. Reference links use the predicted scientific name and may lead to a missing article. Identification is probabilistic and must not determine edibility or medical use. Pl@ntNet and Wikipedia have their own service terms, privacy policies and attribution requirements. Wikipedia text is credited in the app under CC BY-SA; linked pages provide authorship and revision history.
 
