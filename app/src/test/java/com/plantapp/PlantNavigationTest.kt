@@ -85,9 +85,12 @@ class PlantNavigationTest {
         compose.onNode(hasScrollToIndexAction()).performScrollToKey("test-entry")
         compose.onNodeWithText("Az utolsó 100 sikeres felismerést ezen a készüléken tároljuk, a legújabbal kezdve. A felismerésekhez tartozó fotókat is megőrizzük. Az API-kulcs nem kerül az előzményekbe.").assertDoesNotExist()
         compose.onNodeWithText("Részletek elrejtése").assertDoesNotExist()
+        compose.onNodeWithText("Részletek megjelenítése").assertDoesNotExist()
+        compose.onNodeWithText("Előzmény törlése").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Előzmény törlése").assertExists()
         compose.waitUntil(10000) { compose.onAllNodesWithContentDescription("A mentett növény bélyegképe").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("A mentett növény bélyegképe").performScrollTo().assertIsDisplayed().assertHeightIsEqualTo(144.dp)
-        compose.onNodeWithText("Részletek megjelenítése").performScrollTo().performClick()
+        compose.onNodeWithTag("history-photo-test-entry").performScrollTo().performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithContentDescription("A korábban felismert növény képe").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("A korábban felismert növény képe").performScrollTo().assertIsDisplayed().assertHeightIsEqualTo(320.dp).performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithContentDescription("A mentett növény teljes felbontású képe").fetchSemanticsNodes().isNotEmpty() }
@@ -98,7 +101,12 @@ class PlantNavigationTest {
         compose.onNodeWithText("100%").assertIsDisplayed()
         compose.onNodeWithText("Bezárás").performClick()
         compose.onNodeWithTag("full-photo-viewer").assertDoesNotExist()
-        compose.onNodeWithText("Részletek elrejtése").assertExists()
+        compose.onNodeWithText("Részletek elrejtése").performScrollTo().performClick()
+        compose.onNodeWithText("Mentett növényleírás").assertDoesNotExist()
+        compose.onNodeWithText("Részletek elrejtése").assertDoesNotExist()
+        compose.onNodeWithTag("history-photo-test-entry").assertHasClickAction()
+        compose.onNodeWithTag("history-photo-test-entry").performScrollTo().performClick()
+        compose.onNodeWithText("Mentett növényleírás").assertExists()
     }
 
     @Test fun preparedPhotoEnablesRecognitionAndMissingKeyIsExplainedOnTap() {
@@ -135,7 +143,7 @@ class PlantNavigationTest {
         awaitHistory()
         compose.onNode(hasScrollToIndexAction()).performScrollToKey("test-entry")
         compose.onNodeWithText("Százszorszép").assertIsDisplayed()
-        compose.onNodeWithText("Részletek megjelenítése").performScrollTo().performClick()
+        compose.onNodeWithTag("history-photo-test-entry").performScrollTo().performClick()
         compose.onNodeWithText("Mentett növényleírás").assertExists()
         compose.onNodeWithText("Egyezési pontszám: 95,0%").assertExists()
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Összes előzmény törlése"))

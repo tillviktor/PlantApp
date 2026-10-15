@@ -2,9 +2,18 @@
 
 An Android app built with Kotlin and Jetpack Compose. Take a plant photo, see up to three Pl@ntNet matches with common/scientific names, family and match score, and read a Wikipedia description or open its reference page.
 
+## 0.6.0 – Bélyegképről nyitható részletek és kuka ikon
+
+**Legújabb telepítő:** [`downloads/PlantApp-0.6.0-debug.apk`](downloads/PlantApp-0.6.0-debug.apk).
+
+- Csak a növény közneve és latin neve kijelölhető, a felismerés és az előzmények oldalán egyaránt. A dátum, pontszám, család és leírás nem kijelölhető.
+- Az egyedi törlés szöveges hivatkozását a kártya jobb felső sarkában kuka ikon váltotta fel. A törlés továbbra is megerősítést kér.
+- A Részletek megjelenítése szöveges hivatkozás kikerült. A bélyegképre koppintás nyitja ki a részleteket; régi, fotó nélküli bejegyzésnél a kép helyén lévő mezőre lehet koppintani.
+- Nyitott állapotban a **Részletek elrejtése** hivatkozás látható és visszacsukja a kártyát. A nagy részletes képre koppintva a teljes képernyős nézet nyílik meg.
+
 ## 0.5.1 – Másolható növénynevek és leírások
 
-**Legújabb telepítő:** [`downloads/PlantApp-0.5.1-debug.apk`](downloads/PlantApp-0.5.1-debug.apk).
+**0.5.1 telepítő:** [`downloads/PlantApp-0.5.1-debug.apk`](downloads/PlantApp-0.5.1-debug.apk).
 
 A felismerési eredmények nevei (magyar/köznév és latin név), családja, pontszáma és leírása kijelölhető és másolható. Az előzmények összecsukott kártyáján a nevek és a dátum, a részletekben pedig az eredmények szövege ugyanígy másolható. Hosszan érintsd meg a kívánt szöveget, állítsd be a kijelölést a fogantyúkkal, majd válaszd az Android **Másolás** műveletét. A fotók és a gombok külön maradnak a kijelölhető szövegtől.
 

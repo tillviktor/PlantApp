@@ -60,16 +60,17 @@ private fun rememberPhoto(file: File?, maxEdge: Int): PhotoLoad {
 }
 
 @Composable
-internal fun HistoryPhoto(file: File?, expanded: Boolean, onOpen: () -> Unit) {
+internal fun HistoryPhoto(file: File?, expanded: Boolean, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val image = rememberPhoto(file, if (expanded) 1600 else 512)
     val description = stringResource(if (expanded) R.string.history_photo else R.string.history_thumbnail)
-    val openLabel = stringResource(R.string.open_full_photo)
-    image.bitmap?.let {
-        val click = if (expanded) Modifier.clickable(onClickLabel = openLabel, onClick = onOpen) else Modifier
-        Image(it.asImageBitmap(), contentDescription = description,
-            modifier = Modifier.fillMaxWidth().height(if (expanded) 320.dp else 144.dp).then(click), contentScale = ContentScale.Fit)
-        if (expanded) Text(stringResource(R.string.tap_full_photo), style = MaterialTheme.typography.bodySmall)
-    } ?: Text(stringResource(if (image.loading && file != null) R.string.loading_history_photo else R.string.no_history_photo), style = MaterialTheme.typography.bodySmall)
+    val openLabel = stringResource(if (expanded) R.string.open_full_photo else R.string.show_details)
+    val click = if (!expanded || image.bitmap != null) Modifier.clickable(onClickLabel = openLabel, onClick = onOpen) else Modifier
+    Box(modifier.fillMaxWidth().height(if (expanded) 320.dp else 144.dp).then(click), contentAlignment = Alignment.Center) {
+        image.bitmap?.let {
+            Image(it.asImageBitmap(), contentDescription = description, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+        } ?: Text(stringResource(if (image.loading && file != null) R.string.loading_history_photo else R.string.no_history_photo), style = MaterialTheme.typography.bodySmall)
+    }
+    if (expanded && image.bitmap != null) Text(stringResource(R.string.tap_full_photo), style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable
