@@ -2,6 +2,12 @@
 
 An Android app built with Kotlin and Jetpack Compose. Take a plant photo, see up to three Pl@ntNet matches with common/scientific names, family and match score, and read a Wikipedia description or open its reference page.
 
+## 0.2.1 – Felismerés gomb javítása
+
+A fénykép előkészítése után a felismerés gombja API-kulcs nélkül is aktív. Hiányzó kulcs esetén megnyomáskor egy bezárható magyar üzenet jelzi, hogy a Menü → Beállítások oldalon kell megadni a kulcsot; az alkalmazás nem küld hitelesítés nélküli kérést. A főoldalon nincs külön Beállítások-hivatkozás vagy kulcsmegadást kérő szöveg. A tényleges felismerés továbbra is érvényes Pl@ntNet-kulcsot igényel.
+
+**Legújabb telepítő:** [`downloads/PlantApp-0.2.1-debug.apk`](downloads/PlantApp-0.2.1-debug.apk).
+
 ## 0.2.0 – Magyar felület és előzmények
 
 - Magyar nyelvű felület, üzenetek, dátumok és pontszámok.

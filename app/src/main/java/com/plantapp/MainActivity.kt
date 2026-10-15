@@ -60,6 +60,7 @@ fun PlantScreen(model: PlantViewModel) {
     val page = Page.valueOf(pageName)
     var menuOpen by remember { mutableStateOf(false) }
     var linkError by remember { mutableStateOf(false) }
+    var keyRequired by rememberSaveable { mutableStateOf(false) }
     val openLink: (String) -> Unit = { url ->
         try { links.openUri(url) } catch (_: ActivityNotFoundException) { linkError = true }
         catch (_: IllegalArgumentException) { linkError = true }
@@ -106,12 +107,8 @@ fun PlantScreen(model: PlantViewModel) {
                     try { camera.launch(FileProvider.getUriForFile(context, "${context.packageName}.photos", file)) }
                     catch (_: ActivityNotFoundException) { pendingPath = null; file.delete(); model.reportCameraError() }
                 }) { Text(stringResource(if (model.photo == null) R.string.take_photo else R.string.retake_photo)) }
-                if (model.apiKey.isBlank()) {
-                    Text(stringResource(R.string.key_missing))
-                    TextButton(onClick = { pageName = Page.SETTINGS.name }) { Text(stringResource(R.string.settings)) }
-                }
                 Text(stringResource(R.string.upload_notice), style = MaterialTheme.typography.bodySmall)
-                Button(onClick = model::identify, enabled = model.photo != null && model.apiKey.isNotBlank() && !model.busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.identify)) }
+                Button(onClick = { if (model.apiKey.isBlank()) keyRequired = true else model.identify() }, enabled = model.photo != null && !model.busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.identify)) }
                 if (model.busy) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(stringResource(R.string.working)) }
                 model.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 model.historySaveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -121,6 +118,10 @@ fun PlantScreen(model: PlantViewModel) {
             }
         }
     }
+    if (keyRequired) AlertDialog(onDismissRequest = { keyRequired = false },
+        title = { Text(stringResource(R.string.key_required_title)) },
+        text = { Text(stringResource(R.string.key_missing)) },
+        confirmButton = { TextButton(onClick = { keyRequired = false }) { Text(stringResource(R.string.close)) } })
     if (linkError) AlertDialog(onDismissRequest = { linkError = false }, text = { Text(stringResource(R.string.link_error)) },
         confirmButton = { TextButton(onClick = { linkError = false }) { Text(stringResource(R.string.close)) } })
 }

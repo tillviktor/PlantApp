@@ -3,6 +3,8 @@ package com.plantapp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import android.app.Application
+import android.graphics.Bitmap
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.compose.ui.semantics.SemanticsActions
 import org.junit.rules.ExternalResource
@@ -50,6 +52,35 @@ class PlantNavigationTest {
         openMenu("Beállítások")
         compose.onNodeWithText("API-kulcs elfelejtése").performScrollTo().assertIsEnabled().performClick()
         compose.onNodeWithText("API-kulcs elfelejtése").assertIsNotEnabled()
+    }
+
+    @Test fun preparedPhotoEnablesRecognitionAndMissingKeyIsExplainedOnTap() {
+        val missingKey = "A felismeréshez add meg az API-kulcsot a Menü → Beállítások oldalon."
+        compose.onNodeWithText("Beállítások").assertDoesNotExist()
+        compose.onNodeWithText(missingKey).assertDoesNotExist()
+        compose.onNodeWithText("Növény felismerése").performScrollTo().assertIsNotEnabled()
+        compose.activityRule.scenario.onActivity { activity ->
+            val directory = File(activity.cacheDir, "photos").apply { mkdirs() }
+            val photo = File(directory, "regression-camera.jpg")
+            val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+            photo.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            bitmap.recycle()
+            ViewModelProvider(activity)[PlantViewModel::class.java].acceptPhoto(photo)
+        }
+        compose.waitUntil(10000) {
+            compose.onAllNodes(hasText("Növény felismerése") and isEnabled()).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Növény felismerése").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithText("API-kulcs szükséges").assertIsDisplayed()
+        compose.onNodeWithText(missingKey).assertIsDisplayed()
+        compose.onNodeWithText("Bezárás").performClick()
+        compose.onNodeWithText(missingKey).assertDoesNotExist()
+        compose.onNodeWithText("Beállítások").assertDoesNotExist()
+        openMenu("Beállítások")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("test-only-not-a-real-key")
+        compose.onNodeWithText("Vissza").performClick()
+        compose.onNodeWithText("Növény felismerése").performScrollTo().assertIsEnabled()
+        compose.onNodeWithContentDescription("A lefotózott növény").assertExists()
     }
 
     @Test fun historyReloadsShowsDetailsAndRequiresConfirmationToClear() {

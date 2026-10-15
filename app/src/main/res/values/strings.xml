@@ -51,4 +51,5 @@
     <string name="network_error">Nem sikerült kapcsolódni. Ellenőrizd az internetkapcsolatot, majd próbáld újra.</string>
     <string name="link_error">A hivatkozást nem sikerült megnyitni. Ellenőrizd, hogy van-e telepített böngésző.</string>
     <string name="close">Bezárás</string>
+    <string name="key_required_title">API-kulcs szükséges</string>
 </resources>
