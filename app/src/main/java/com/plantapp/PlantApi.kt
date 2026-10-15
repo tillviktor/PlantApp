@@ -7,7 +7,7 @@ import java.net.URL
 import java.net.URLEncoder
 import java.util.UUID
 
-data class PlantMatch(val scientificName: String, val commonName: String, val family: String, val confidence: Double) {
+data class PlantMatch(val scientificName: String, val commonName: String, val family: String, val confidence: Double, val alternativeNames: List<String> = emptyList(), val namesEnriched: Boolean = false) {
     val wikipediaUrl: String get() = "https://en.wikipedia.org/wiki/" + encode(scientificName.replace(' ', '_'))
 }
 fun encode(value: String): String = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
@@ -25,7 +25,8 @@ object PlantApi {
             if (name.isBlank()) return@mapNotNull null
             PlantMatch(name, species.optJSONArray("commonNames")?.optString(0).orEmpty().ifBlank { name },
                 species.optJSONObject("family")?.optString("scientificNameWithoutAuthor").orEmpty(),
-                item.optDouble("score", 0.0).takeIf { it.isFinite() }?.coerceIn(0.0, 1.0) ?: 0.0)
+                item.optDouble("score", 0.0).takeIf { it.isFinite() }?.coerceIn(0.0, 1.0) ?: 0.0,
+                species.optJSONArray("commonNames")?.let { names -> (0 until names.length()).map { names.optString(it).trim() }.filter(String::isNotEmpty).distinct() }.orEmpty())
         }.sortedByDescending { it.confidence }.take(3)
     }
 
@@ -56,11 +57,74 @@ object PlantApi {
         } finally { connection.disconnect() }
     }
 
+    /** Resolve scientific names through Wikipedia redirects, then retrieve real hu/en labels and aliases. */
+    fun alternativeNames(scientificNames: List<String>): Map<String, List<String>> {
+        val output = mutableMapOf<String, List<String>>()
+        scientificNames.distinct().chunked(40).forEach { batch ->
+            val pages = fetchJson("https://en.wikipedia.org/w/api.php?action=query&redirects=1&prop=pageprops&format=json&titles=${encode(batch.joinToString("|"))}")
+            val ids = parseWikiIds(pages, batch)
+            if (ids.isNotEmpty()) {
+                val entities = fetchJson("https://www.wikidata.org/w/api.php?action=wbgetentities&props=labels%7Caliases&languages=hu%7Cen&format=json&ids=${encode(ids.values.distinct().joinToString("|"))}")
+                val labels = parseAlternativeNames(entities)
+                ids.forEach { (name, id) -> labels[id]?.let { output[name] = it } }
+            }
+        }
+        return output
+    }
+
+    internal fun parseWikiIds(body: String, names: List<String>): Map<String, String> {
+        val query = JSONObject(body).optJSONObject("query") ?: return emptyMap()
+        val redirects = mutableMapOf<String, String>()
+        listOf("normalized", "redirects").forEach { key ->
+            query.optJSONArray(key)?.let { array -> (0 until array.length()).forEach { index ->
+                val item = array.getJSONObject(index)
+                redirects[item.getString("from")] = item.getString("to")
+            } }
+        }
+        val byTitle = mutableMapOf<String, String>()
+        query.optJSONObject("pages")?.let { pages -> pages.keys().forEach { key ->
+            val page = pages.getJSONObject(key)
+            val id = page.optJSONObject("pageprops")?.optString("wikibase_item").orEmpty()
+            if (id.matches(Regex("Q[0-9]+"))) byTitle[page.optString("title")] = id
+        } }
+        return names.mapNotNull { name ->
+            var title = name
+            val seen = mutableSetOf<String>()
+            while (redirects.containsKey(title) && seen.add(title)) title = redirects.getValue(title)
+            byTitle[title]?.let { name to it }
+        }.toMap()
+    }
+
+    internal fun parseAlternativeNames(body: String): Map<String, List<String>> {
+        val entities = JSONObject(body).optJSONObject("entities") ?: return emptyMap()
+        return entities.keys().asSequence().mapNotNull { id ->
+            val entity = entities.optJSONObject(id) ?: return@mapNotNull null
+            val names = mutableListOf<String>()
+            listOf("hu", "en").forEach { language ->
+                entity.optJSONObject("labels")?.optJSONObject(language)?.optString("value")?.let(names::add)
+                entity.optJSONObject("aliases")?.optJSONArray(language)?.let { array ->
+                    (0 until minOf(array.length(), 100)).forEach { index -> array.optJSONObject(index)?.optString("value")?.let(names::add) }
+                }
+            }
+            names.map(String::trim).filter(String::isNotEmpty).distinct().takeIf { it.isNotEmpty() }?.let { id to it }
+        }.toMap()
+    }
+
+    private fun fetchJson(address: String): String {
+        val connection = URL(address).openConnection() as HttpURLConnection
+        return try {
+            connection.connectTimeout = 10000; connection.readTimeout = 10000
+            connection.setRequestProperty("User-Agent", "PlantApp/0.4.0 (https://github.com/tillviktor/PlantApp)")
+            check(connection.responseCode == 200) { "Name reference unavailable" }
+            connection.inputStream.bufferedReader().use { it.readText() }
+        } finally { connection.disconnect() }
+    }
+
     fun summary(name: String): String? {
         val connection = URL("https://en.wikipedia.org/api/rest_v1/page/summary/${encode(name.replace(' ', '_'))}").openConnection() as HttpURLConnection
         return try {
             connection.connectTimeout = 10000; connection.readTimeout = 10000
-            connection.setRequestProperty("User-Agent", "PlantApp/0.2 (Android plant identification prototype)")
+            connection.setRequestProperty("User-Agent", "PlantApp/0.4.0 (https://github.com/tillviktor/PlantApp)")
             if (connection.responseCode != 200) null else connection.inputStream.bufferedReader().use {
                 val page = JSONObject(it.readText())
                 if (page.optString("type") == "disambiguation") null else page.optString("extract").takeIf(String::isNotBlank)

@@ -2,9 +2,19 @@
 
 An Android app built with Kotlin and Jetpack Compose. Take a plant photo, see up to three Pl@ntNet matches with common/scientific names, family and match score, and read a Wikipedia description or open its reference page.
 
+## 0.4.0 – Egyenkénti törlés és név szerinti keresés
+
+**Legújabb telepítő:** [`downloads/PlantApp-0.4.0-debug.apk`](downloads/PlantApp-0.4.0-debug.apk).
+
+- Az Előzmények oldalon minden kártyán külön **Előzmény törlése** gomb van. Megerősítés után csak az adott felismerés és a hozzá tartozó fotó törlődik; a többi bejegyzés és az API-kulcs megmarad.
+- A **Keresés név szerint** mező részleges magyar, angol és latin neveket is keres, ékezettől és kis-/nagybetűtől függetlenül, az összes mentett találatban. Üres kereséskor a teljes lista visszaáll. A kereső melletti × csak a keresést üríti.
+- A Pl@ntNet összes visszaadott köznevét megőrizzük. Kereséskor a még nem kiegészített nevekhez, ha a szolgáltatások elérhetők, Wikipédia-átirányítások és Wikidata magyar/angol címkék, illetve névváltozatok kerülnek a helyi névjegyzékbe. Csak a tudományos neveket küldjük ezekhez a szolgáltatásokhoz, fotót vagy API-kulcsot nem.
+- A mentett nevek között a keresés offline is működik. A régi bejegyzések angol/magyar névváltozatainak első kiegészítéséhez internet kell; elérhető nevek hiányában az eredeti név és a latin név továbbra is kereshető. A névjegyzék frissítése nem hoz vissza közben törölt előzményeket. Sikertelen letöltés után a **Névváltozatok frissítése** gombbal újra lehet próbálni.
+- Az **Összes előzmény törlése** továbbra is az egész listát törli, aktív keresés esetén is; ezt a külön megerősítés jelzi.
+
 ## 0.3.0 – Fotós előzmények és megjegyzett API-kulcs
 
-**Legújabb telepítő:** [`downloads/PlantApp-0.3.0-debug.apk`](downloads/PlantApp-0.3.0-debug.apk).
+**0.3.0 telepítő:** [`downloads/PlantApp-0.3.0-debug.apk`](downloads/PlantApp-0.3.0-debug.apk).
 
 - A menü sorrendje: **Felismerés → Előzmények → Beállítások**.
 - Az új, sikeres felismeréseknél a helyadatoktól megtisztított, legfeljebb 1600 pixeles fotót is az alkalmazás belső tárhelyére másoljuk. Az Előzmények → Részletek nézetben a kép is megjelenik. A gyorsítótár ürítése nem törli ezeket a fotókat.

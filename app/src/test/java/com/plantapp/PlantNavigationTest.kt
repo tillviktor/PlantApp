@@ -41,6 +41,14 @@ class PlantNavigationTest {
             .performSemanticsAction(SemanticsActions.OnClick) { it() }
     }
 
+    private fun awaitHistory() {
+        compose.waitUntil(10000) {
+            var ready = false
+            compose.runOnIdle { ready = !ViewModelProvider(compose.activity)[PlantViewModel::class.java].historyBusy }
+            ready
+        }
+    }
+
     @Test fun apiKeyLivesInSettingsAndSurvivesNavigation() {
         compose.onNodeWithText("Növény lefotózása").assertIsDisplayed()
         compose.onNodeWithText("Pl@ntNet-kapcsolat").assertDoesNotExist()
@@ -72,7 +80,7 @@ class PlantNavigationTest {
         image.delete()
         compose.activityRule.scenario.onActivity { ViewModelProvider(it)[PlantViewModel::class.java].reloadHistory() }
         openMenu("Előzmények")
-        compose.waitUntil(10000) { compose.onAllNodesWithText("Összes előzmény törlése").fetchSemanticsNodes().isNotEmpty() }
+        awaitHistory()
         compose.onNode(hasScrollToIndexAction()).performScrollToKey("test-entry")
         compose.onNodeWithText("Részletek megjelenítése").performScrollTo().performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithContentDescription("A korábban felismert növény képe").fetchSemanticsNodes().isNotEmpty() }
@@ -110,7 +118,7 @@ class PlantNavigationTest {
 
     @Test fun historyReloadsShowsDetailsAndRequiresConfirmationToClear() {
         openMenu("Előzmények")
-        compose.waitUntil(10000) { compose.onAllNodesWithText("Összes előzmény törlése").fetchSemanticsNodes().isNotEmpty() }
+        awaitHistory()
         compose.onNode(hasScrollToIndexAction()).performScrollToKey("test-entry")
         compose.onNodeWithText("Százszorszép").assertIsDisplayed()
         compose.onNodeWithText("Részletek megjelenítése").performScrollTo().performClick()
@@ -124,10 +132,45 @@ class PlantNavigationTest {
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Összes előzmény törlése"))
         compose.onNodeWithText("Összes előzmény törlése").performClick()
         compose.onNodeWithText("Törlés").performClick()
-        compose.waitUntil(10000) { compose.onAllNodesWithText("Még nincsenek felismerési előzmények. Fotózz le és ismertess fel egy növényt!").fetchSemanticsNodes().isNotEmpty() }
+        awaitHistory()
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Még nincsenek felismerési előzmények. Fotózz le és ismertess fel egy növényt!"))
         compose.activityRule.scenario.recreate()
         openMenu("Előzmények")
+        awaitHistory()
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Még nincsenek felismerési előzmények. Fotózz le és ismertess fel egy növényt!"))
         compose.onNodeWithText("Még nincsenek felismerési előzmények. Fotózz le és ismertess fel egy növényt!").assertIsDisplayed()
         compose.onNodeWithText("Százszorszép").assertDoesNotExist()
     }
+    @Test fun searchFindsEnglishAndLatinAliasesAndDeletesOnlySelectedEntry() {
+        val store = HistoryStore(historyFile)
+        val original = store.load().first()
+        store.add(original.copy(results = original.results.map { it.copy(match = it.match.copy(
+            alternativeNames = listOf("Common daisy", "Százszorszép"), namesEnriched = true)) }))
+        store.add(HistoryEntry("rose-entry", 1700000001000, listOf(PlantResult(
+            PlantMatch("Rosa canina", "Gyepűrózsa", "Rosaceae", 0.9, listOf("Dog rose"), true), null))))
+        compose.activityRule.scenario.onActivity { ViewModelProvider(it)[PlantViewModel::class.java].reloadHistory() }
+        openMenu("Előzmények"); awaitHistory()
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextInput("DAISY")
+        compose.onNode(hasScrollToIndexAction()).performScrollToKey("test-entry")
+        compose.onNodeWithText("Százszorszép").assertIsDisplayed()
+        compose.onNodeWithText("Gyepűrózsa").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("BELLIS")
+        compose.onNode(hasScrollToIndexAction()).performScrollToKey("test-entry")
+        compose.onNodeWithTag("delete-history-test-entry").performScrollTo().performClick()
+        compose.onNodeWithText("Mégse").performClick()
+        org.junit.Assert.assertEquals(2, store.load().size)
+        compose.onNodeWithTag("delete-history-test-entry").performClick()
+        compose.onNodeWithText("Törlés").performClick(); awaitHistory()
+        org.junit.Assert.assertEquals(listOf("rose-entry"), store.load().map { it.id })
+        compose.onNodeWithContentDescription("Keresés törlése").performScrollTo().performClick()
+        compose.onNode(hasScrollToIndexAction()).performScrollToKey("rose-entry")
+        compose.onNodeWithText("Gyepűrózsa").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("gyepurozsa")
+        compose.onNode(hasScrollToIndexAction()).performScrollToKey("rose-entry")
+        compose.onNodeWithText("Gyepűrózsa").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("nincs ilyen")
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Nincs a keresésnek megfelelő előzmény."))
+        compose.onNodeWithText("Nincs a keresésnek megfelelő előzmény.").assertIsDisplayed()
+    }
+
 }

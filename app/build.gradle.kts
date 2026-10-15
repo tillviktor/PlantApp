@@ -2,7 +2,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id(
 android {
     namespace = "com.plantapp"
     compileSdk = 35
-    defaultConfig { applicationId = "com.plantapp"; minSdk = 26; targetSdk = 35; versionCode = 4; versionName = "0.3.0" }
+    defaultConfig { applicationId = "com.plantapp"; minSdk = 26; targetSdk = 35; versionCode = 5; versionName = "0.4.0" }
     buildFeatures { compose = true }
     testOptions { unitTests.isIncludeAndroidResources = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }

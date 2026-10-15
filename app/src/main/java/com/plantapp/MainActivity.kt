@@ -25,9 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -154,11 +157,33 @@ private fun ResultCard(result: PlantResult, index: Int, openLink: (String) -> Un
 @Composable
 private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, modifier: Modifier = Modifier) {
     var confirmClear by rememberSaveable { mutableStateOf(false) }
+    var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val clearSearchDescription = stringResource(R.string.clear_search)
+    val filtered = remember(model.history, query) { searchHistory(model.history, query) }
+    LaunchedEffect(query, model.history, model.historyNamesLoading) {
+        if (query.isNotBlank()) model.enrichHistoryNames()
+    }
     LazyColumn(modifier.fillMaxWidth(), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text(stringResource(R.string.history), style = MaterialTheme.typography.headlineLarge)
             Spacer(Modifier.height(12.dp))
             Text(stringResource(R.string.history_info))
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
+                label = { Text(stringResource(R.string.history_search)) },
+                placeholder = { Text(stringResource(R.string.history_search_hint)) },
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = { if (query.isNotEmpty()) TextButton(onClick = { query = "" }, modifier = Modifier.semantics { contentDescription = clearSearchDescription }) { Text("×") } })
+            Text(stringResource(R.string.history_search_info), style = MaterialTheme.typography.bodySmall)
+            if (query.isNotBlank()) Text(stringResource(R.string.history_matches_count, filtered.size, model.history.size))
+            if (model.historyNamesLoading) Text(stringResource(R.string.history_names_loading), style = MaterialTheme.typography.bodySmall)
+            if (query.isNotBlank()) {
+                model.historyNamesError?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                if (!model.historyNamesLoading && model.history.any { entry -> entry.results.any { !it.match.namesEnriched } }) {
+                    TextButton(onClick = model::retryHistoryNames) { Text(stringResource(R.string.retry_history_names)) }
+                }
+            }
         }
         if (model.historyBusy) item { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(stringResource(R.string.history_loading)) }
         model.historyError?.let { message -> item {
@@ -169,7 +194,8 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
         if (model.history.isNotEmpty() || model.historyError != null) item {
             OutlinedButton(onClick = { confirmClear = true }, enabled = !model.historyBusy && !model.busy) { Text(stringResource(R.string.clear_history)) }
         }
-        items(model.history, key = { it.id }) { entry ->
+        if (model.history.isNotEmpty() && filtered.isEmpty() && !model.historyNamesLoading) item { Text(stringResource(R.string.history_no_matches)) }
+        items(filtered, key = { it.id }) { entry ->
             var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -177,6 +203,8 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
                     Text(entry.results.first().match.commonName, style = MaterialTheme.typography.titleLarge)
                     Text(entry.results.first().match.scientificName, fontStyle = FontStyle.Italic)
                     TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) R.string.hide_details else R.string.show_details)) }
+                    TextButton(onClick = { pendingDeleteId = entry.id }, enabled = !model.historyBusy && !model.busy,
+                        modifier = Modifier.testTag("delete-history-${entry.id}")) { Text(stringResource(R.string.delete_history_entry)) }
                     if (expanded) {
                         HistoryPhoto(model.historyPhoto(entry))
                         entry.results.forEachIndexed { index, result -> ResultCard(result, index, openLink) }
@@ -186,6 +214,13 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
         }
         if (model.history.isNotEmpty()) item { IdentificationNotice() }
         item { Attribution() }
+    }
+    model.history.firstOrNull { it.id == pendingDeleteId }?.let { entry ->
+        AlertDialog(onDismissRequest = { pendingDeleteId = null },
+            title = { Text(stringResource(R.string.confirm_delete_entry_title)) },
+            text = { Text(stringResource(R.string.confirm_delete_entry_message, entry.results.first().match.commonName)) },
+            confirmButton = { TextButton(onClick = { pendingDeleteId = null; model.deleteHistoryEntry(entry.id) }) { Text(stringResource(R.string.delete)) } },
+            dismissButton = { TextButton(onClick = { pendingDeleteId = null }) { Text(stringResource(R.string.cancel)) } })
     }
     if (confirmClear) AlertDialog(onDismissRequest = { confirmClear = false },
         title = { Text(stringResource(R.string.confirm_clear_title)) }, text = { Text(stringResource(R.string.confirm_clear_message)) },

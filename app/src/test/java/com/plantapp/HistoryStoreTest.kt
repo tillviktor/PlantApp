@@ -110,4 +110,31 @@ class HistoryStoreTest {
         assertNull(store.photoFile(entry("bad", 1).copy(photoName = "../secret.jpg")))
     }
 
+    @Test fun individualDeletionOnlyRemovesSelectedRecordAndItsPhoto() {
+        val file = file(); val store = HistoryStore(file)
+        val source = File(folder.root, "image.jpg").apply { writeText("image") }
+        val first = store.add(entry("first", 1), source).first()
+        val second = store.add(entry("second", 2), source).first()
+        val firstPhoto = store.photoFile(first)!!; val secondPhoto = store.photoFile(second)!!
+        assertEquals(listOf(second), store.remove(first.id))
+        assertFalse(firstPhoto.exists()); assertTrue(secondPhoto.exists())
+        assertEquals(listOf(second), HistoryStore(file).load())
+        assertEquals(listOf(second), store.remove("missing"))
+        assertTrue(store.remove(second.id).isEmpty()); assertFalse(secondPhoto.exists())
+    }
+    @Test fun enrichedNamesPersistAndDoNotResurrectDeletedRecords() {
+        val file = file(); val store = HistoryStore(file)
+        store.add(entry("first", 1)); store.add(entry("second", 2))
+        store.remove("first")
+        store.updateAlternativeNames(mapOf("Bellis perennis" to listOf("Common daisy", "százszorszép")))
+        // Simulate a Wikipedia description arriving after names have already been enriched.
+        store.add(entry("second", 2, "Late summary"))
+        val restored = HistoryStore(file).load()
+        assertEquals("Late summary", restored.first().results.first().summary)
+        assertEquals(listOf("second"), restored.map { it.id })
+        assertTrue(restored.first().results.first().match.namesEnriched)
+        assertEquals(listOf("Common daisy", "százszorszép"), restored.first().results.first().match.alternativeNames)
+        assertEquals(1, searchHistory(restored, "DAISY").size)
+    }
+
 }

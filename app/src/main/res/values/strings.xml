@@ -60,4 +60,16 @@
     <string name="history_photo">A korábban felismert növény képe</string>
     <string name="no_history_photo">Ehhez az előzményhez nem érhető el mentett fotó.</string>
     <string name="loading_history_photo">A mentett kép betöltése…</string>
+    <string name="history_search">Keresés név szerint</string>
+    <string name="history_search_hint">Magyar, angol vagy latin név</string>
+    <string name="history_search_info">A mentett nevekben offline is kereshetsz. Internetkapcsolattal a Wikipédia/Wikidata további magyar és angol neveivel egészítjük ki az előzményeket.</string>
+    <string name="clear_search">Keresés törlése</string>
+    <string name="history_matches_count">Előzmények: %1$d / %2$d</string>
+    <string name="history_names_loading">További névváltozatok betöltése…</string>
+    <string name="history_no_matches">Nincs a keresésnek megfelelő előzmény.</string>
+    <string name="delete_history_entry">Előzmény törlése</string>
+    <string name="confirm_delete_entry_title">Törlöd ezt az előzményt?</string>
+    <string name="confirm_delete_entry_message">A kiválasztott felismerés és a hozzá tartozó fotó véglegesen törlődik: %1$s. A többi előzmény megmarad.</string>
+    <string name="retry_history_names">Névváltozatok frissítése</string>
+    <string name="history_names_unavailable">Néhány további név nem tölthető le. A keresés a már mentett nevekben működik; internetkapcsolattal újrapróbálhatod a frissítést.</string>
 </resources>

@@ -13,6 +13,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -32,6 +33,37 @@ class PlantViewModel @JvmOverloads constructor(
 
 
     fun reloadHistory() { viewModelScope.launch { changeHistory { store.load() } } }
+    fun deleteHistoryEntry(id: String) { viewModelScope.launch { changeHistory { store.remove(id) } } }
+    private val attemptedNames = mutableSetOf<String>()
+    private var namesJob: Job? = null
+    var historyNamesLoading by mutableStateOf(false); private set
+    var historyNamesError by mutableStateOf<String?>(null); private set
+    fun retryHistoryNames() {
+        if (namesJob?.isActive == true) return
+        attemptedNames.clear()
+        enrichHistoryNames()
+    }
+    fun enrichHistoryNames() {
+        if (namesJob?.isActive == true) return
+        val names = history.flatMap { it.results }.filterNot { it.match.namesEnriched }.map { it.match.scientificName }.distinct().filterNot { it in attemptedNames }
+        if (names.isEmpty()) return
+        attemptedNames += names
+        namesJob = viewModelScope.launch {
+            historyNamesLoading = true
+            historyNamesError = null
+            try {
+                names.chunked(40).forEach { batch ->
+                    try {
+                        val aliases = withContext(Dispatchers.IO) { PlantApi.alternativeNames(batch) }
+                        if (aliases.isNotEmpty()) changeHistory { store.updateAlternativeNames(aliases) }
+                    } catch (e: Exception) {
+                        if (e is CancellationException) throw e
+                        historyNamesError = text(R.string.history_names_unavailable)
+                    }
+                }
+            } finally { historyNamesLoading = false }
+        }
+    }
     fun clearHistory() { viewModelScope.launch { changeHistory { store.clear() } } }
     private suspend fun changeHistory(operation: () -> List<HistoryEntry>): Boolean = historyMutex.withLock {
         historyBusy = true

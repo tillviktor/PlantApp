@@ -1,10 +1,17 @@
-# PlantApp 0.3.0 – Android-telepítő
+# PlantApp 0.4.0 – Android-telepítő
 
-A `PlantApp-0.3.0-debug.apk` közvetlenül telepíthető Android 8.0 vagy újabb rendszerre. GitHubon a fájl oldalán a **Download raw file** gombbal tölthető le. Nyisd meg a telefonon, szükség esetén engedélyezd a telepítést a böngészőből/fájlkezelőből, majd válaszd a **Telepítés** lehetőséget.
+A `PlantApp-0.4.0-debug.apk` közvetlenül telepíthető Android 8.0 vagy újabb rendszerre. GitHubon a fájl oldalán a **Download raw file** gombbal tölthető le. Nyisd meg a telefonon, szükség esetén engedélyezd a telepítést a böngészőből/fájlkezelőből, majd válaszd a **Telepítés** lehetőséget.
 
-Fejlesztői aláírással készült APK, verziószám: **0.3.0**, verziókód: **4**. A korábbi, ugyanebben a környezetben aláírt verziókra frissítésként telepíthető. A SHA-256 ellenőrzőösszeg a mellette található `.sha256` fájlban szerepel.
+Fejlesztői aláírással készült APK, verziószám: **0.4.0**, verziókód: **5**. A korábbi, ugyanebben a környezetben aláírt verziókra frissítésként telepíthető. A SHA-256 ellenőrzőösszeg a mellette található `.sha256` fájlban szerepel.
 
-## Újdonságok
+## Újdonságok a 0.4.0 verzióban
+
+- Előzményenkénti törlés, külön megerősítéssel. A kiválasztott fotó is törlődik, a többi bejegyzés megmarad.
+- Keresés részleges magyar, angol vagy latin névre; kis-/nagybetű- és ékezetfüggetlenül. A × csak a keresőmezőt üríti.
+- A további magyar és angol névváltozatokat kereséskor a Wikipédia/Wikidata szolgáltatásokból töltjük le, majd helyben megőrizzük. Ehhez először internet szükséges; az elérhető nevek fajonként eltérhetnek. A már mentett nevek offline is kereshetők.
+- Az összes előzmény törlése aktív szűrés mellett is az egész listára vonatkozik.
+
+## Megmaradó funkciók
 
 - Menü: **Felismerés → Előzmények → Beállítások**.
 - Az új, sikeres felismerések fotói a Részletek nézetben is megjelennek. A korábbi, kép nélkül mentett bejegyzések is olvashatók, de fotójuk nem állítható vissza.
@@ -16,8 +23,8 @@ Fejlesztői aláírással készült APK, verziószám: **0.3.0**, verziókód: *
 
 Adj meg saját Pl@ntNet-kulcsot, nyomd meg a Mentés gombot, majd teljesen zárd be és nyisd újra az alkalmazást. A kulcs maradjon meg. Készíts új sikeres felismerést, nyisd meg az Előzmények → Részletek nézetet: a fotó is jelenjen meg újraindítás után. Előzmények törlésekor ellenőrizd a Mégse és a Törlés működését; a kulcs külön, a Beállításokban felejthető el.
 
-A fizikai kamerát, az Android Keystore készülékspecifikus működését és az élő Pl@ntNet-kérést a felhős munkakörnyezetben nem ellenőriztük. A Wikipédia leírásai és cikkei angol nyelvűek lehetnek.
+A fizikai kamerát, az Android Keystore készülékspecifikus működését, az élő Pl@ntNet-kérést és a névjegyzék szolgáltatásainak telefonos elérését a felhős munkakörnyezetben nem ellenőriztük. A felhős Wikipédia-próbát a hálózati proxy 403 válasszal blokkolta; a névfeldolgozást rögzített API-válaszokkal teszteltük. A Wikipédia leírásai és cikkei angol nyelvűek lehetnek.
 
 ## Automatizált ellenőrzés
 
-Az `assembleDebug testDebugUnitTest lintDebug` sikeres: **26 teszt sikeres, 0 hibás, 0 kihagyott**, a lint nem jelzett problémát. A tesztek a menüsorrendet, a mentett kép megjelenítését, a régi előzmények olvasását, a fotók megőrzését/törlését, a titkosított kulcs újratöltését új tároló- és alkalmazásmodell-példányban, a kulcs elfelejtését és a sérült titkosított adatok kezelését is ellenőrzik. A kulcstárolási tesztek valódi AES-GCM titkosítást használnak, tesztben biztosított titkosító kulccsal; a készülék Android Keystore szolgáltatását nem helyettesítik. Az APK aláírását az Android SDK `apksigner verify` eszköze ellenőrizte.
+Az `assembleDebug testDebugUnitTest lintDebug` sikeres: **35 teszt sikeres, 0 hibás, 0 kihagyott**, a lint nem jelzett problémát. A tesztek ellenőrzik az egyedi törlés tartósságát és a megfelelő fotó törlését, a Mégse működését, a többi előzmény megőrzését, a magyar/angol/latin és ékezetfüggetlen keresést, a keresés ürítését, a találat nélküli állapotot, az alternatív nevek tartós tárolását, a névfrissítés és későn érkező leírások együttműködését, valamint a Wikipédia-átirányítások és Wikidata-nevek feldolgozását. A törölt bejegyzéseket egy későbbi névfrissítés nem hozza vissza. Az APK aláírását az Android SDK `apksigner verify` eszköze ellenőrizte.
