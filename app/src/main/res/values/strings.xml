@@ -73,7 +73,6 @@
     <string name="history_names_unavailable">Néhány további név nem tölthető le. A keresés a már mentett nevekben működik; internetkapcsolattal újrapróbálhatod a frissítést.</string>
     <string name="history_thumbnail">A mentett növény bélyegképe</string>
     <string name="open_full_photo">Mentett kép megnyitása teljes méretben</string>
-    <string name="tap_full_photo">Koppints a képre a teljes méretű nézethez.</string>
     <string name="full_photo_title">Teljes méretű kép</string>
     <string name="full_history_photo">A mentett növény teljes felbontású képe</string>
     <string name="photo_zoom_percent">%1$d%%</string>

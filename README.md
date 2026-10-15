@@ -2,9 +2,15 @@
 
 An Android app built with Kotlin and Jetpack Compose. Take a plant photo, see up to three Pl@ntNet matches with common/scientific names, family and match score, and read a Wikipedia description or open its reference page.
 
+## 0.6.1 – Képnagyítási súgószöveg eltávolítása
+
+**Legújabb telepítő:** [`downloads/PlantApp-0.6.1-debug.apk`](downloads/PlantApp-0.6.1-debug.apk).
+
+A részletes kép alatti „Koppints a képre a teljes méretű nézethez.” szöveget eltávolítottuk. A képre koppintva továbbra is megnyílik a teljes képernyős képnézet.
+
 ## 0.6.0 – Bélyegképről nyitható részletek és kuka ikon
 
-**Legújabb telepítő:** [`downloads/PlantApp-0.6.0-debug.apk`](downloads/PlantApp-0.6.0-debug.apk).
+**0.6.0 telepítő:** [`downloads/PlantApp-0.6.0-debug.apk`](downloads/PlantApp-0.6.0-debug.apk).
 
 - Csak a növény közneve és latin neve kijelölhető, a felismerés és az előzmények oldalán egyaránt. A dátum, pontszám, család és leírás nem kijelölhető.
 - Az egyedi törlés szöveges hivatkozását a kártya jobb felső sarkában kuka ikon váltotta fel. A törlés továbbra is megerősítést kér.

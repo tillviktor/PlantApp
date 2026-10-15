@@ -70,7 +70,6 @@ internal fun HistoryPhoto(file: File?, expanded: Boolean, onOpen: () -> Unit, mo
             Image(it.asImageBitmap(), contentDescription = description, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         } ?: Text(stringResource(if (image.loading && file != null) R.string.loading_history_photo else R.string.no_history_photo), style = MaterialTheme.typography.bodySmall)
     }
-    if (expanded && image.bitmap != null) Text(stringResource(R.string.tap_full_photo), style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable
