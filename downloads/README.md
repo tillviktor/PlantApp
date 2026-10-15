@@ -1,10 +1,14 @@
-# PlantApp 0.5.0 – Android-telepítő
+# PlantApp 0.5.1 – Android-telepítő
 
-A `PlantApp-0.5.0-debug.apk` közvetlenül telepíthető Android 8.0 vagy újabb rendszerre. GitHubon a fájl oldalán a **Download raw file** gombbal tölthető le. Nyisd meg a telefonon, szükség esetén engedélyezd a telepítést a böngészőből/fájlkezelőből, majd válaszd a **Telepítés** lehetőséget.
+A `PlantApp-0.5.1-debug.apk` közvetlenül telepíthető Android 8.0 vagy újabb rendszerre. GitHubon a fájl oldalán a **Download raw file** gombbal tölthető le. Nyisd meg a telefonon, szükség esetén engedélyezd a telepítést a böngészőből/fájlkezelőből, majd válaszd a **Telepítés** lehetőséget.
 
-Fejlesztői aláírással készült APK, verziószám: **0.5.0**, verziókód: **6**. A korábbi, ugyanebben a környezetben aláírt verziókra frissítésként telepíthető. A SHA-256 ellenőrzőösszeg a mellette található `.sha256` fájlban szerepel.
+Fejlesztői aláírással készült APK, verziószám: **0.5.1**, verziókód: **7**. A korábbi, ugyanebben a környezetben aláírt verziókra frissítésként telepíthető. A SHA-256 ellenőrzőösszeg a mellette található `.sha256` fájlban szerepel.
 
-## Újdonságok a 0.5.0 verzióban
+## Kijelölés és másolás
+
+A felismerési eredmények és az előzmények magyar/köznevei, latin nevei és leírásai kijelölhetők. Hosszan érintsd meg a szöveget, igazítsd a kijelölést, majd válaszd a **Másolás** műveletet. Az előzményekben a nevek már a részletek megnyitása nélkül is másolhatók.
+
+## Újdonságok a 0.5.1 verzióban
 
 - A bélyegkép a Részletek megjelenítése megnyomása nélkül is látható.
 - A részletekben nagyobb, jobb felbontással betöltött fotó jelenik meg.
@@ -28,6 +32,4 @@ A fizikai kamerát, az Android Keystore készülékspecifikus működését, az 
 
 ## Automatizált ellenőrzés
 
-Az `assembleDebug testDebugUnitTest lintDebug` sikeres: **40 teszt sikeres, 0 hibás, 0 kihagyott**, a lint nem jelzett problémát. A felületi teszt ellenőrzi a bélyegkép megjelenését bezárt kártyán, a nagyobb részletes képet, a teljes képernyős nézet megnyitását, a nagyítás/alaphelyzet gombokat és a bezárást. Külön teszt ellenőrzi a bélyegkép mintavételezését és a mentett képpontok megőrzését a részletes/teljes nézetben, továbbá a nagyítás és eltolás korlátait. A csippentést, dupla koppintást és a rendszer Vissza gombját telefonon is ki kell próbálni.
-
-Az APK aláírását az Android SDK `apksigner verify` eszköze ellenőrizte; az aláíró tanúsítvány megegyezik a 0.4.0 kiadáséval. A képrögzítés ebben a verzióban is legfeljebb 1600 pixeles hosszabb oldalt ment; a teljes nézet a mentett fájl felbontását használja, nem az eredeti kameraképét.
+Az `assembleDebug testDebugUnitTest lintDebug` sikeres: a meglévő **40 teszt sikeres, 0 hibás, 0 kihagyott**, a lint nem jelzett problémát. A másolást az Android/Compose natív szövegkijelölése biztosítja; a hosszan érintés és a rendszer Másolás menüjének készülékspecifikus működését telefonon is ellenőrizni kell. Az APK aláírását ellenőriztük, az aláíró megegyezik a 0.5.0 kiadáséval.

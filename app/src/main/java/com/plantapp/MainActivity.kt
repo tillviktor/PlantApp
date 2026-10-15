@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -136,14 +137,18 @@ fun PlantScreen(model: PlantViewModel) {
 private fun ResultCard(result: PlantResult, index: Int, openLink: (String) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(if (index == 0) R.string.best_match else R.string.possible_match), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-            Text(result.match.commonName, style = MaterialTheme.typography.headlineSmall)
-            Text(result.match.scientificName, fontStyle = FontStyle.Italic)
-            Text(stringResource(R.string.score, String.format(Locale.forLanguageTag("hu-HU"), "%.1f", result.match.confidence * 100)))
-            if (result.match.family.isNotBlank()) Text(stringResource(R.string.family, result.match.family))
-            if (index == 0) {
-                Text(result.summary ?: stringResource(R.string.no_description))
-                Text(stringResource(R.string.wikipedia_language), style = MaterialTheme.typography.bodySmall)
+            SelectionContainer {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(if (index == 0) R.string.best_match else R.string.possible_match), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(result.match.commonName, style = MaterialTheme.typography.headlineSmall)
+                    Text(result.match.scientificName, fontStyle = FontStyle.Italic)
+                    Text(stringResource(R.string.score, String.format(Locale.forLanguageTag("hu-HU"), "%.1f", result.match.confidence * 100)))
+                    if (result.match.family.isNotBlank()) Text(stringResource(R.string.family, result.match.family))
+                    if (index == 0) {
+                        Text(result.summary ?: stringResource(R.string.no_description))
+                        Text(stringResource(R.string.wikipedia_language), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
             }
             TextButton(onClick = { openLink(result.match.wikipediaUrl) }) { Text(stringResource(R.string.wikipedia)) }
         }
@@ -194,9 +199,13 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
             var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.forLanguageTag("hu-HU")).format(Date(entry.recognizedAtMillis)), style = MaterialTheme.typography.labelLarge)
-                    Text(entry.results.first().match.commonName, style = MaterialTheme.typography.titleLarge)
-                    Text(entry.results.first().match.scientificName, fontStyle = FontStyle.Italic)
+                    SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.forLanguageTag("hu-HU")).format(Date(entry.recognizedAtMillis)), style = MaterialTheme.typography.labelLarge)
+                            Text(entry.results.first().match.commonName, style = MaterialTheme.typography.titleLarge)
+                            Text(entry.results.first().match.scientificName, fontStyle = FontStyle.Italic)
+                        }
+                    }
                     HistoryPhoto(model.historyPhoto(entry), expanded, onOpen = { fullPhotoId = entry.id })
                     TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) R.string.hide_details else R.string.show_details)) }
                     TextButton(onClick = { pendingDeleteId = entry.id }, enabled = !model.historyBusy && !model.busy,

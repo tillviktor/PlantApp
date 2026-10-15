@@ -2,9 +2,15 @@
 
 An Android app built with Kotlin and Jetpack Compose. Take a plant photo, see up to three Pl@ntNet matches with common/scientific names, family and match score, and read a Wikipedia description or open its reference page.
 
+## 0.5.1 – Másolható növénynevek és leírások
+
+**Legújabb telepítő:** [`downloads/PlantApp-0.5.1-debug.apk`](downloads/PlantApp-0.5.1-debug.apk).
+
+A felismerési eredmények nevei (magyar/köznév és latin név), családja, pontszáma és leírása kijelölhető és másolható. Az előzmények összecsukott kártyáján a nevek és a dátum, a részletekben pedig az eredmények szövege ugyanígy másolható. Hosszan érintsd meg a kívánt szöveget, állítsd be a kijelölést a fogantyúkkal, majd válaszd az Android **Másolás** műveletét. A fotók és a gombok külön maradnak a kijelölhető szövegtől.
+
 ## 0.5.0 – Bélyegképek és teljes képernyős fotónézet
 
-**Legújabb telepítő:** [`downloads/PlantApp-0.5.0-debug.apk`](downloads/PlantApp-0.5.0-debug.apk).
+**0.5.0 telepítő:** [`downloads/PlantApp-0.5.0-debug.apk`](downloads/PlantApp-0.5.0-debug.apk).
 
 - A mentett fotó bélyegképe a bezárt előzménykártyán is látszik.
 - A Részletek megjelenítése 320 dp magas képet mutat a korábbi 240 dp helyett, a mentett fájlból nagyobb felbontással betöltve.
