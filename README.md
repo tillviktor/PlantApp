@@ -2,12 +2,24 @@
 
 An Android app built with Kotlin and Jetpack Compose. Take a plant photo, see up to three Pl@ntNet matches with common/scientific names, family and match score, and read a Wikipedia description or open its reference page.
 
+## 0.2.0 – Magyar felület és előzmények
+
+- Magyar nyelvű felület, üzenetek, dátumok és pontszámok.
+- **Menü → Beállítások:** Pl@ntNet API-kulcs megadása, igénylési hivatkozás és a kulcs elfelejtése. A kulcs csak a memóriában marad; az alkalmazás folyamatának újraindulása után ismét meg kell adni.
+- **Menü → Előzmények:** az utolsó 100 sikeres felismerés, legújabb elöl, dátummal, a találatokkal és a már letöltött leírással. A részletek és a Wikipédia-hivatkozások később is megnyithatók; a mentett adatok megtekintése nem igényel internetet.
+- Az előzmények az alkalmazás saját belső tárhelyén maradnak újraindítás után is. Nem tartalmaznak fotót, helyadatot vagy API-kulcsot, és nem kerülnek felhőmentésbe. Az alkalmazás eltávolításakor vagy adatainak törlésekor elvesznek.
+- Az összes előzmény törlése megerősítést kér. Sérült előzményfájlt az alkalmazás nem ír felül csendben; hibát jelez, és lehetőséget ad az újrapróbálásra vagy törlésre.
+- A Pl@ntNet magyar közneveket kér (`lang=hu`); elérhetőségük az adatbázistól függ. A tudományos nevek latinul, a Wikipédia leírásai és hivatkozásai egyelőre angolul jelenhetnek meg.
+
+Telepítés: a [`downloads/PlantApp-0.2.0-debug.apk`](downloads/PlantApp-0.2.0-debug.apk) fájlnál kattints a **Download raw file** gombra, másold a telefonodra, majd nyisd meg. Android 8.0 vagy újabb szükséges. Ez egy fejlesztői kulccsal aláírt, közvetlenül telepíthető APK. A korábbi, ugyanebben a környezetben aláírt 0.1.0 verzióra frissítésként telepíthető. Az ellenőrzőösszeg a mellette található `.sha256` fájlban van.
+
+
 ## Run on a phone
 
 1. Open this project in Android Studio, using JDK 21 and Android SDK 35. Allow Gradle sync to complete.
 2. Run the `app` configuration on an Android 8.0+ device with a camera app and internet access.
-3. Create a personal API key at https://my.plantnet.org/ and paste it into the app. Do not commit keys.
-4. Take a close, well-lit photo of a leaf or flower, then tap **Identify plant**. The app explicitly uploads the photo only when you tap Identify.
+3. Create a personal API key at https://my.plantnet.org/ and paste it into **Menü → Beállítások**. Do not commit keys.
+4. Take a close, well-lit photo of a leaf or flower, then tap **Növény felismerése**. The app explicitly uploads the photo only when you tap Identify.
 
 The key remains in memory for the current app process (including screen rotation); it is not saved to disk. You must enter it again after the process exits. Identification requires a valid key and available quota. This personal-key prototype does not ship a shared service key. A public release should use a backend to manage credentials, quotas and abuse protection.
 
@@ -23,7 +35,7 @@ Descriptions are fetched from English Wikipedia when available; identification s
 
 Debug APK: `app/build/outputs/apk/debug/app-debug.apk`.
 
-Tests cover real API-shaped response parsing, candidate ordering, empty/missing data, confidence bounds and Wikipedia URL escaping. A physical device or emulator plus a valid API key is required to verify the complete camera/network flow. No live recognition results are fabricated or bundled.
+Tests cover real API-shaped response parsing, candidate ordering, empty/missing data, confidence bounds and Wikipedia URL escaping; history persistence across store instances, ordering, deduplication, the 100-entry limit, durable deletion, Unicode/null descriptions, invalid entries and corrupted/unknown files. Robolectric/Compose tests exercise Hungarian menu navigation, API-key editing outside the home screen, history reloading and detail expansion, and confirmation/cancellation of history deletion. A physical device or emulator plus a valid API key is required to verify the complete camera/network flow. No live recognition results are fabricated or bundled.
 
 ## Codex cloud environment
 

@@ -1,5 +1,6 @@
 package com.plantapp
 
+import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -7,16 +8,43 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 
-data class PlantResult(val match: PlantMatch, val summary: String?)
-class PlantViewModel : ViewModel() {
+class PlantViewModel(application: Application) : AndroidViewModel(application) {
+    private val store = HistoryStore(File(application.filesDir, "recognition-history.json"))
+    private val historyMutex = Mutex()
+    var history by mutableStateOf<List<HistoryEntry>>(emptyList()); private set
+    var historyBusy by mutableStateOf(true); private set
+    var historyError by mutableStateOf<String?>(null); private set
+    var historySaveError by mutableStateOf<String?>(null); private set
+    private fun text(id: Int) = getApplication<Application>().getString(id)
+
+    init { reloadHistory() }
+
+    fun reloadHistory() { viewModelScope.launch { changeHistory { store.load() } } }
+    fun clearHistory() { viewModelScope.launch { changeHistory { store.clear() } } }
+    private suspend fun changeHistory(operation: () -> List<HistoryEntry>): Boolean = historyMutex.withLock {
+        historyBusy = true
+        try {
+            history = withContext(Dispatchers.IO) { operation() }
+            historyError = null
+            historySaveError = null
+            true
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            historyError = text(R.string.history_error)
+            false
+        } finally { historyBusy = false }
+    }
+
     var apiKey by mutableStateOf("")
     var photo by mutableStateOf<File?>(null); private set
     var preview by mutableStateOf<Bitmap?>(null); private set
@@ -27,7 +55,7 @@ class PlantViewModel : ViewModel() {
     fun acceptPhoto(file: File) {
         if (busy) return
         viewModelScope.launch {
-            busy = true; error = null; results = emptyList()
+            busy = true; error = null; results = emptyList(); historySaveError = null
             try {
                 val bitmap = withContext(Dispatchers.IO) {
                     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -52,28 +80,38 @@ class PlantViewModel : ViewModel() {
                 photo?.delete(); photo = bitmap.first; preview = bitmap.second
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                error = "Unable to prepare the photo. Please take another picture."
+                error = text(R.string.photo_error)
             } finally { busy = false }
         }
     }
-    fun reportCameraError() { error = "No camera app is available on this device." }
+    fun reportCameraError() { error = text(R.string.camera_error) }
     fun identify() {
         val image = photo ?: return
         if (busy || apiKey.isBlank()) return
         viewModelScope.launch {
-            busy = true; error = null; results = emptyList()
+            busy = true; error = null; results = emptyList(); historySaveError = null
             try {
                 val matches = withContext(Dispatchers.IO) { PlantApi.identify(image, apiKey.trim()) }
-                if (matches.isEmpty()) { error = "No match found. Try another leaf or flower."; return@launch }
+                if (matches.isEmpty()) { error = text(R.string.no_match); return@launch }
+                val recognizedAt = System.currentTimeMillis()
                 results = matches.map { PlantResult(it, null) }
+                val entry = HistoryEntry(recognizedAtMillis = recognizedAt, results = results)
+                if (!changeHistory { store.add(entry) }) historySaveError = text(R.string.history_save_error)
                 val summary = withContext(Dispatchers.IO) {
                     try { PlantApi.summary(matches.first().scientificName) }
                     catch (e: Exception) { if (e is CancellationException) throw e; null }
                 }
                 results = results.mapIndexed { index, result -> if (index == 0) result.copy(summary = summary) else result }
+                if (summary != null && !changeHistory { store.add(entry.copy(results = results)) }) historySaveError = text(R.string.history_save_error)
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                error = if (e is IllegalStateException || e is IllegalArgumentException) e.message else "Couldn't connect. Check your internet connection and try again."
+                error = text(when ((e as? IdentificationException)?.reason) {
+                    IdentificationFailure.NO_MATCH -> R.string.no_match
+                    IdentificationFailure.KEY_REJECTED -> R.string.key_rejected
+                    IdentificationFailure.QUOTA -> R.string.quota_error
+                    IdentificationFailure.SERVICE -> R.string.service_error
+                    null -> R.string.network_error
+                })
             } finally { busy = false }
         }
     }

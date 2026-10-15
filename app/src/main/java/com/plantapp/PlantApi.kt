@@ -12,6 +12,9 @@ data class PlantMatch(val scientificName: String, val commonName: String, val fa
 }
 fun encode(value: String): String = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
+enum class IdentificationFailure { NO_MATCH, KEY_REJECTED, QUOTA, SERVICE }
+class IdentificationException(val reason: IdentificationFailure) : Exception()
+
 object PlantApi {
     fun parseMatches(body: String): List<PlantMatch> {
         val results = JSONObject(body).optJSONArray("results") ?: return emptyList()
@@ -29,7 +32,7 @@ object PlantApi {
     fun identify(photo: File, apiKey: String): List<PlantMatch> {
         require(photo.isFile && photo.length() > 0) { "Take a photo first." }
         val boundary = "PlantApp-" + UUID.randomUUID()
-        val connection = URL("https://my-api.plantnet.org/v2/identify/all?api-key=${encode(apiKey)}").openConnection() as HttpURLConnection
+        val connection = URL("https://my-api.plantnet.org/v2/identify/all?lang=hu&api-key=${encode(apiKey)}").openConnection() as HttpURLConnection
         try {
             connection.requestMethod = "POST"
             connection.connectTimeout = 20000
@@ -45,10 +48,10 @@ object PlantApi {
             }
             when (connection.responseCode) {
                 200 -> return connection.inputStream.bufferedReader().use { parseMatches(it.readText()) }
-                400, 404 -> error("No plant was recognized. Try a closer, well-lit photo of a leaf or flower.")
-                401, 403 -> error("The Pl@ntNet API key was rejected. Check your key and account access.")
-                429 -> error("Identification quota reached. Try again later.")
-                else -> error("The identification service is unavailable. Please try again later.")
+                400, 404 -> throw IdentificationException(IdentificationFailure.NO_MATCH)
+                401, 403 -> throw IdentificationException(IdentificationFailure.KEY_REJECTED)
+                429 -> throw IdentificationException(IdentificationFailure.QUOTA)
+                else -> throw IdentificationException(IdentificationFailure.SERVICE)
             }
         } finally { connection.disconnect() }
     }
@@ -57,7 +60,7 @@ object PlantApi {
         val connection = URL("https://en.wikipedia.org/api/rest_v1/page/summary/${encode(name.replace(' ', '_'))}").openConnection() as HttpURLConnection
         return try {
             connection.connectTimeout = 10000; connection.readTimeout = 10000
-            connection.setRequestProperty("User-Agent", "PlantApp/0.1 (Android plant identification prototype)")
+            connection.setRequestProperty("User-Agent", "PlantApp/0.2 (Android plant identification prototype)")
             if (connection.responseCode != 200) null else connection.inputStream.bufferedReader().use {
                 val page = JSONObject(it.readText())
                 if (page.optString("type") == "disambiguation") null else page.optString("extract").takeIf(String::isNotBlank)
