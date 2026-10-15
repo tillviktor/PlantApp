@@ -1,15 +1,16 @@
-# PlantApp 0.4.0 – Android-telepítő
+# PlantApp 0.5.0 – Android-telepítő
 
-A `PlantApp-0.4.0-debug.apk` közvetlenül telepíthető Android 8.0 vagy újabb rendszerre. GitHubon a fájl oldalán a **Download raw file** gombbal tölthető le. Nyisd meg a telefonon, szükség esetén engedélyezd a telepítést a böngészőből/fájlkezelőből, majd válaszd a **Telepítés** lehetőséget.
+A `PlantApp-0.5.0-debug.apk` közvetlenül telepíthető Android 8.0 vagy újabb rendszerre. GitHubon a fájl oldalán a **Download raw file** gombbal tölthető le. Nyisd meg a telefonon, szükség esetén engedélyezd a telepítést a böngészőből/fájlkezelőből, majd válaszd a **Telepítés** lehetőséget.
 
-Fejlesztői aláírással készült APK, verziószám: **0.4.0**, verziókód: **5**. A korábbi, ugyanebben a környezetben aláírt verziókra frissítésként telepíthető. A SHA-256 ellenőrzőösszeg a mellette található `.sha256` fájlban szerepel.
+Fejlesztői aláírással készült APK, verziószám: **0.5.0**, verziókód: **6**. A korábbi, ugyanebben a környezetben aláírt verziókra frissítésként telepíthető. A SHA-256 ellenőrzőösszeg a mellette található `.sha256` fájlban szerepel.
 
-## Újdonságok a 0.4.0 verzióban
+## Újdonságok a 0.5.0 verzióban
 
-- Előzményenkénti törlés, külön megerősítéssel. A kiválasztott fotó is törlődik, a többi bejegyzés megmarad.
-- Keresés részleges magyar, angol vagy latin névre; kis-/nagybetű- és ékezetfüggetlenül. A × csak a keresőmezőt üríti.
-- A további magyar és angol névváltozatokat kereséskor a Wikipédia/Wikidata szolgáltatásokból töltjük le, majd helyben megőrizzük. Ehhez először internet szükséges; az elérhető nevek fajonként eltérhetnek. A már mentett nevek offline is kereshetők.
-- Az összes előzmény törlése aktív szűrés mellett is az egész listára vonatkozik.
+- A bélyegkép a Részletek megjelenítése megnyomása nélkül is látható.
+- A részletekben nagyobb, jobb felbontással betöltött fotó jelenik meg.
+- A részletes képre koppintva teljes képernyős nézet nyílik, csippentéses és dupla koppintásos nagyítással, eltolással, valamint Nagyítás/Kicsinyítés/Alaphelyzet gombokkal. A Bezárás vagy a rendszer Vissza gombja bezárja.
+- Az Előzmények cím és a keresőmező közötti ismertető szöveg kikerült.
+- A teljes nézet az elérhető mentett fájl teljes felbontását mutatja. A korábban legfeljebb 1600 pixelesre mentett képek eredeti kamerafelbontását nem lehet visszaállítani.
 
 ## Megmaradó funkciók
 
@@ -27,4 +28,6 @@ A fizikai kamerát, az Android Keystore készülékspecifikus működését, az 
 
 ## Automatizált ellenőrzés
 
-Az `assembleDebug testDebugUnitTest lintDebug` sikeres: **35 teszt sikeres, 0 hibás, 0 kihagyott**, a lint nem jelzett problémát. A tesztek ellenőrzik az egyedi törlés tartósságát és a megfelelő fotó törlését, a Mégse működését, a többi előzmény megőrzését, a magyar/angol/latin és ékezetfüggetlen keresést, a keresés ürítését, a találat nélküli állapotot, az alternatív nevek tartós tárolását, a névfrissítés és későn érkező leírások együttműködését, valamint a Wikipédia-átirányítások és Wikidata-nevek feldolgozását. A törölt bejegyzéseket egy későbbi névfrissítés nem hozza vissza. Az APK aláírását az Android SDK `apksigner verify` eszköze ellenőrizte.
+Az `assembleDebug testDebugUnitTest lintDebug` sikeres: **40 teszt sikeres, 0 hibás, 0 kihagyott**, a lint nem jelzett problémát. A felületi teszt ellenőrzi a bélyegkép megjelenését bezárt kártyán, a nagyobb részletes képet, a teljes képernyős nézet megnyitását, a nagyítás/alaphelyzet gombokat és a bezárást. Külön teszt ellenőrzi a bélyegkép mintavételezését és a mentett képpontok megőrzését a részletes/teljes nézetben, továbbá a nagyítás és eltolás korlátait. A csippentést, dupla koppintást és a rendszer Vissza gombját telefonon is ki kell próbálni.
+
+Az APK aláírását az Android SDK `apksigner verify` eszköze ellenőrizte; az aláíró tanúsítvány megegyezik a 0.4.0 kiadáséval. A képrögzítés ebben a verzióban is legfeljebb 1600 pixeles hosszabb oldalt ment; a teljes nézet a mentett fájl felbontását használja, nem az eredeti kameraképét.

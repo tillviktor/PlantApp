@@ -29,7 +29,6 @@
     <string name="wikipedia_language">A Wikipédia leírása és hivatkozása angol nyelvű lehet.</string>
     <string name="identification_notice">A felismerés javaslat, nem biztos azonosítás. Ne ez alapján döntsd el, hogy egy növény ehető vagy gyógyászati célra használható-e.</string>
     <string name="attribution">Növényfelismerés: Pl@ntNet · Leírások: Wikipédia (CC BY-SA).</string>
-    <string name="history_info">Az utolsó 100 sikeres felismerést ezen a készüléken tároljuk, a legújabbal kezdve. A felismerésekhez tartozó fotókat is megőrizzük. Az API-kulcs nem kerül az előzményekbe.</string>
     <string name="history_empty">Még nincsenek felismerési előzmények. Fotózz le és ismertess fel egy növényt!</string>
     <string name="history_loading">Előzmények betöltése…</string>
     <string name="clear_history">Összes előzmény törlése</string>
@@ -72,4 +71,13 @@
     <string name="confirm_delete_entry_message">A kiválasztott felismerés és a hozzá tartozó fotó véglegesen törlődik: %1$s. A többi előzmény megmarad.</string>
     <string name="retry_history_names">Névváltozatok frissítése</string>
     <string name="history_names_unavailable">Néhány további név nem tölthető le. A keresés a már mentett nevekben működik; internetkapcsolattal újrapróbálhatod a frissítést.</string>
+    <string name="history_thumbnail">A mentett növény bélyegképe</string>
+    <string name="open_full_photo">Mentett kép megnyitása teljes méretben</string>
+    <string name="tap_full_photo">Koppints a képre a teljes méretű nézethez.</string>
+    <string name="full_photo_title">Teljes méretű kép</string>
+    <string name="full_history_photo">A mentett növény teljes felbontású képe</string>
+    <string name="photo_zoom_percent">%1$d%%</string>
+    <string name="zoom_in">Nagyítás</string>
+    <string name="zoom_out">Kicsinyítés</string>
+    <string name="reset_zoom">Alaphelyzet</string>
 </resources>

@@ -2,9 +2,19 @@
 
 An Android app built with Kotlin and Jetpack Compose. Take a plant photo, see up to three Pl@ntNet matches with common/scientific names, family and match score, and read a Wikipedia description or open its reference page.
 
+## 0.5.0 – Bélyegképek és teljes képernyős fotónézet
+
+**Legújabb telepítő:** [`downloads/PlantApp-0.5.0-debug.apk`](downloads/PlantApp-0.5.0-debug.apk).
+
+- A mentett fotó bélyegképe a bezárt előzménykártyán is látszik.
+- A Részletek megjelenítése 320 dp magas képet mutat a korábbi 240 dp helyett, a mentett fájlból nagyobb felbontással betöltve.
+- A részletes képre koppintva teljes képernyős nézet nyílik. Csippentéssel, dupla koppintással és a Nagyítás/Kicsinyítés gombokkal 1–5× nagyítás érhető el. Nagyítva a kép eltolható, az Alaphelyzet gomb visszaállítja a nézetet. Bezárással vagy a rendszer Vissza gombjával visszatérhetsz az előzményekhez.
+- Az Előzmények cím és a keresőmező közötti ismertető szöveget eltávolítottuk.
+- A teljes nézet a mentett fájl összes pixelét tölti be. A korábbi képrögzítési folyamat legfeljebb 1600 pixeles fotót mentett; ez továbbra is a mentett kép felbontása, az eredeti kamerakép utólag nem állítható vissza. A nagyítás nem talál ki hiányzó részleteket.
+
 ## 0.4.0 – Egyenkénti törlés és név szerinti keresés
 
-**Legújabb telepítő:** [`downloads/PlantApp-0.4.0-debug.apk`](downloads/PlantApp-0.4.0-debug.apk).
+**0.4.0 telepítő:** [`downloads/PlantApp-0.4.0-debug.apk`](downloads/PlantApp-0.4.0-debug.apk).
 
 - Az Előzmények oldalon minden kártyán külön **Előzmény törlése** gomb van. Megerősítés után csak az adott felismerés és a hozzá tartozó fotó törlődik; a többi bejegyzés és az API-kulcs megmarad.
 - A **Keresés név szerint** mező részleges magyar, angol és latin neveket is keres, ékezettől és kis-/nagybetűtől függetlenül, az összes mentett találatban. Üres kereséskor a teljes lista visszaáll. A kereső melletti × csak a keresést üríti.

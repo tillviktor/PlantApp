@@ -2,10 +2,6 @@ package com.plantapp
 
 import android.content.ActivityNotFoundException
 import android.os.Bundle
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -157,6 +153,7 @@ private fun ResultCard(result: PlantResult, index: Int, openLink: (String) -> Un
 @Composable
 private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, modifier: Modifier = Modifier) {
     var confirmClear by rememberSaveable { mutableStateOf(false) }
+    var fullPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     val clearSearchDescription = stringResource(R.string.clear_search)
@@ -167,8 +164,6 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
     LazyColumn(modifier.fillMaxWidth(), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text(stringResource(R.string.history), style = MaterialTheme.typography.headlineLarge)
-            Spacer(Modifier.height(12.dp))
-            Text(stringResource(R.string.history_info))
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
                 label = { Text(stringResource(R.string.history_search)) },
@@ -202,11 +197,11 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
                     Text(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.forLanguageTag("hu-HU")).format(Date(entry.recognizedAtMillis)), style = MaterialTheme.typography.labelLarge)
                     Text(entry.results.first().match.commonName, style = MaterialTheme.typography.titleLarge)
                     Text(entry.results.first().match.scientificName, fontStyle = FontStyle.Italic)
+                    HistoryPhoto(model.historyPhoto(entry), expanded, onOpen = { fullPhotoId = entry.id })
                     TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) R.string.hide_details else R.string.show_details)) }
                     TextButton(onClick = { pendingDeleteId = entry.id }, enabled = !model.historyBusy && !model.busy,
                         modifier = Modifier.testTag("delete-history-${entry.id}")) { Text(stringResource(R.string.delete_history_entry)) }
                     if (expanded) {
-                        HistoryPhoto(model.historyPhoto(entry))
                         entry.results.forEachIndexed { index, result -> ResultCard(result, index, openLink) }
                     }
                 }
@@ -214,6 +209,9 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
         }
         if (model.history.isNotEmpty()) item { IdentificationNotice() }
         item { Attribution() }
+    }
+    model.history.firstOrNull { it.id == fullPhotoId }?.let { entry ->
+        FullPhotoViewer(model.historyPhoto(entry), onClose = { fullPhotoId = null })
     }
     model.history.firstOrNull { it.id == pendingDeleteId }?.let { entry ->
         AlertDialog(onDismissRequest = { pendingDeleteId = null },
@@ -232,24 +230,3 @@ private fun HistoryScreen(model: PlantViewModel, openLink: (String) -> Unit, mod
 private fun IdentificationNotice() { Text(stringResource(R.string.identification_notice), style = MaterialTheme.typography.bodySmall) }
 @Composable
 private fun Attribution() { Text(stringResource(R.string.attribution), style = MaterialTheme.typography.bodySmall) }
-
-@Composable
-private fun HistoryPhoto(file: File?) {
-    var loaded by remember(file?.path) { mutableStateOf(false) }
-    val bitmap by produceState<Bitmap?>(null, file?.path) {
-        value = withContext(Dispatchers.IO) {
-            if (file == null) null else runCatching {
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeFile(file.path, bounds)
-                var sample = 1
-                while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 1000) sample *= 2
-                BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
-            }.getOrNull()
-        }
-        loaded = true
-    }
-    bitmap?.let {
-        Image(it.asImageBitmap(), contentDescription = stringResource(R.string.history_photo),
-            modifier = Modifier.fillMaxWidth().height(240.dp), contentScale = ContentScale.Fit)
-    } ?: Text(stringResource(if (file == null || loaded) R.string.no_history_photo else R.string.loading_history_photo), style = MaterialTheme.typography.bodySmall)
-}
